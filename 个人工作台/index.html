@@ -2,8 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>宝宝的工作台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="记录计划、学习、阅读、健康、运动和生活成长的个人工作台。">
+<meta name="theme-color" content="#F4F8FC">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>我的个人工作台</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="blue">
@@ -20,14 +23,17 @@
         <div class="auth-decor auth-decor-one"></div><div class="auth-decor auth-decor-two"></div>
         <div class="auth-shell">
           <div class="auth-brand"><span>🌙</span><small>MY LITTLE WORKBENCH</small><h1 id="authTitle">欢迎回来</h1><p id="authDesc">登录后继续记录属于你的每一天</p></div>
-          <div class="auth-tabs"><button class="active" id="authLoginTab">登录</button><button id="authSignupTab">注册</button></div>
+          <div class="auth-tabs" id="authTabs"><button class="active" id="authLoginTab">登录</button><button id="authSignupTab">注册</button></div>
           <div class="auth-form">
             <label>邮箱<input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
             <label>密码<input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="至少 6 位密码"></label>
             <button class="auth-submit hidden" id="cloudSignupBtn">创建我的工作台</button>
             <button class="auth-submit" id="cloudLoginBtn">登录并进入</button>
+            <button class="auth-forgot" id="cloudForgotBtn" type="button">忘记密码？</button>
           </div>
+          <div class="auth-reset hidden" id="authResetPanel"><h2>设置新密码</h2><input id="cloudNewPassword" type="password" minlength="6" autocomplete="new-password" placeholder="输入至少 6 位新密码"><button id="cloudResetPasswordBtn">保存新密码</button></div>
           <p class="auth-status" id="authCloudStatus">账号数据将独立保存</p>
+          <p class="auth-legal">继续使用即表示你同意<a href="terms.html" target="_blank">用户条款</a>和<a href="privacy.html" target="_blank">隐私说明</a></p>
           <details class="auth-project-config" id="authProjectConfig"><summary>首次管理员配置</summary><div><input id="cloudUrl" type="url" placeholder="Supabase Project URL"><input id="cloudAnonKey" type="password" placeholder="Publishable / anon key"><button id="cloudTestBtn">测试连接</button></div><small>普通使用者不需要填写。不要使用 service_role 密钥。</small></details>
         </div>
       </section>
@@ -53,7 +59,7 @@
             <div class="card dual-left">
               <div class="card-head">
                 <span class="card-title"><span class="pin">📌</span> 今日计划</span>
-                <span class="card-more" onclick="switchTab('plan')">全部 →</span>
+              <button class="card-more" data-nav-page="plan">全部 →</button>
               </div>
               <p class="dual-sub">写下今天属于你自己的小计划</p>
               <div class="home-plan-list" id="homePlanList"></div>
@@ -66,7 +72,7 @@
             <div class="card dual-right">
               <div class="card-head">
                 <span class="card-title"><span class="pin">💡</span> 灵感随笔</span>
-                <span class="card-more" onclick="switchTab('idea')">全部 →</span>
+              <button class="card-more" data-nav-page="idea">全部 →</button>
               </div>
               <p class="dual-count"><span id="ideaCount">3</span>/20</p>
               <textarea class="idea-quick" id="ideaQuick" placeholder="闪过的念头..." maxlength="200" rows="2"></textarea>
@@ -86,7 +92,7 @@
           <div class="card">
             <div class="card-head">
               <span class="card-title"><span class="pin">📈</span> 成长日历</span>
-              <span class="card-more" onclick="switchTab('plan')">去计划 →</span>
+              <button class="card-more" data-nav-page="plan">去计划 →</button>
             </div>
             <p class="dual-sub">近7天你完成的任务节奏</p>
             <div class="growth-week" id="growthWeek"></div>
@@ -117,12 +123,12 @@
           <section class="card today-overview-card">
             <div class="section-title"><div><small>TODAY OVERVIEW</small><b>今日进度</b></div></div>
             <div class="today-overview">
-              <button onclick="switchTab('plan')"><span>📋</span><b id="ciTaskProgress">0/0</b><small>今日任务</small></button>
-              <button onclick="switchTab('water')"><span>💧</span><b id="ciWaterProgress">0/8</b><small>喝水</small></button>
-              <button onclick="openHealthTab('dailyworkout')"><span>🏃</span><b id="ciSportProgress">0min</b><small>今日跟练</small></button>
-              <button onclick="switchTab('knowledge')"><span>📖</span><b id="ciReadProgress">未打卡</b><small>阅读</small></button>
-              <button onclick="openHealthTab('diet')"><span>🥣</span><b id="ciDietProgress">0餐</b><small>饮食打卡</small></button>
-              <button onclick="switchTab('study')"><span>⏳</span><b id="ciFocusProgress">0min</b><small>专注学习</small></button>
+              <button data-nav-page="plan"><span>📋</span><b id="ciTaskProgress">0/0</b><small>今日任务</small></button>
+              <button data-nav-page="water"><span>💧</span><b id="ciWaterProgress">0/8</b><small>喝水</small></button>
+              <button data-health-tab="dailyworkout"><span>🏃</span><b id="ciSportProgress">0min</b><small>今日跟练</small></button>
+              <button data-nav-page="knowledge"><span>📖</span><b id="ciReadProgress">未打卡</b><small>阅读</small></button>
+              <button data-health-tab="diet"><span>🥣</span><b id="ciDietProgress">0餐</b><small>饮食打卡</small></button>
+              <button data-nav-page="study"><span>⏳</span><b id="ciFocusProgress">0min</b><small>专注学习</small></button>
             </div>
             <div class="checkin-breakdown" id="checkinBreakdown" aria-label="今日各项完成率"></div>
           </section>
