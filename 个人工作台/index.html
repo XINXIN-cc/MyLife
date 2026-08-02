@@ -7,7 +7,8 @@
 <meta name="theme-color" content="#F4F8FC">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>我的个人工作台</title>
-<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css?v=20260802-2">
 </head>
 <body data-theme="blue">
   <div class="stage">
@@ -32,6 +33,7 @@
             <button class="auth-forgot" id="cloudForgotBtn" type="button">忘记密码？</button>
           </div>
           <div class="auth-reset hidden" id="authResetPanel"><h2>设置新密码</h2><input id="cloudNewPassword" type="password" minlength="6" autocomplete="new-password" placeholder="输入至少 6 位新密码"><button id="cloudResetPasswordBtn">保存新密码</button></div>
+          <p class="auth-loading-tip" id="authLoadingTip" style="display:none">🔄 正在连接云端服务器...</p>
           <p class="auth-status" id="authCloudStatus">账号数据将独立保存</p>
           <p class="auth-legal">继续使用即表示你同意<a href="terms.html" target="_blank">用户条款</a>和<a href="privacy.html" target="_blank">隐私说明</a></p>
           <details class="auth-project-config" id="authProjectConfig"><summary>首次管理员配置</summary><div><input id="cloudUrl" type="url" placeholder="Supabase Project URL"><input id="cloudAnonKey" type="password" placeholder="Publishable / anon key"><button id="cloudTestBtn">测试连接</button></div><small>普通使用者不需要填写。不要使用 service_role 密钥。</small></details>
@@ -1141,7 +1143,8 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="cloud-config.js"></script>
-  <script src="app.js"></script>
+  <script src="cloud-config.js?v=20260802-2"></script>
+  <script src="app.js?v=20260802-2"></script>
+  <script src="loader-check.js?v=20260802-2"></script>
 </body>
 </html>
