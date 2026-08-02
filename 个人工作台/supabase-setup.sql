@@ -7,6 +7,10 @@ create table if not exists public.workbench_data (
 
 alter table public.workbench_data enable row level security;
 
+-- 表级权限：未登录用户无权访问，登录用户还必须通过下方 RLS 才能读写自己的记录
+revoke all on table public.workbench_data from anon;
+grant select, insert, update, delete on table public.workbench_data to authenticated;
+
 drop policy if exists "workbench_select_own" on public.workbench_data;
 create policy "workbench_select_own"
 on public.workbench_data for select
