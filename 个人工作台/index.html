@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>宝宝的工作台</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="blue">
+  <div class="stage">
+    <div class="phone" id="phone">
+
+      <!-- ===== 状态栏 ===== -->
+      <div class="statusbar">
+        <span id="clock">19:20</span>
+        <span class="dots">●●</span>
+      </div>
+
+      <section class="auth-gate hidden" id="authGate">
+        <div class="auth-decor auth-decor-one"></div><div class="auth-decor auth-decor-two"></div>
+        <div class="auth-shell">
+          <div class="auth-brand"><span>🌙</span><small>MY LITTLE WORKBENCH</small><h1 id="authTitle">欢迎回来</h1><p id="authDesc">登录后继续记录属于你的每一天</p></div>
+          <div class="auth-tabs"><button class="active" id="authLoginTab">登录</button><button id="authSignupTab">注册</button></div>
+          <div class="auth-form">
+            <label>邮箱<input id="cloudEmail" type="email" autocomplete="email" placeholder="name@example.com"></label>
+            <label>密码<input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="至少 6 位密码"></label>
+            <button class="auth-submit hidden" id="cloudSignupBtn">创建我的工作台</button>
+            <button class="auth-submit" id="cloudLoginBtn">登录并进入</button>
+          </div>
+          <p class="auth-status" id="authCloudStatus">账号数据将独立保存</p>
+          <details class="auth-project-config" id="authProjectConfig"><summary>首次管理员配置</summary><div><input id="cloudUrl" type="url" placeholder="Supabase Project URL"><input id="cloudAnonKey" type="password" placeholder="Publishable / anon key"><button id="cloudTestBtn">测试连接</button></div><small>普通使用者不需要填写。不要使用 service_role 密钥。</small></details>
+        </div>
+      </section>
+
+      <!-- ==================== 首页 ==================== -->
+      <section class="page" id="page-home">
+        <div class="header">
+          <button class="ham-btn drawer-toggle-btn" aria-label="菜单">☰</button>
+          <div>
+            <p class="hi" id="homeHi">晚上好 👋</p>
+            <p class="date" id="todayDate">2026年7月29日 星期三</p>
+          </div>
+          <div class="coin-badge">
+            <span>🌙</span><span id="headerCoins">10</span>&nbsp;(<span id="headerDone">0</span>/<span id="headerTotal">10</span>)
+          </div>
+        </div>
+
+        <div class="scroll home-scroll">
+
+          <!-- 双卡行：今日计划 + 灵感随笔 -->
+          <div class="dual-row">
+            <!-- 左：今日计划（自定义） -->
+            <div class="card dual-left">
+              <div class="card-head">
+                <span class="card-title"><span class="pin">📌</span> 今日计划</span>
+                <span class="card-more" onclick="switchTab('plan')">全部 →</span>
+              </div>
+              <p class="dual-sub">写下今天属于你自己的小计划</p>
+              <div class="home-plan-list" id="homePlanList"></div>
+              <div class="home-plan-add">
+                <input class="home-plan-input" id="homePlanInput" placeholder="今天的计划…" maxlength="40">
+                <button class="home-plan-btn" id="homePlanBtn">＋</button>
+              </div>
+            </div>
+            <!-- 右：灵感随笔 -->
+            <div class="card dual-right">
+              <div class="card-head">
+                <span class="card-title"><span class="pin">💡</span> 灵感随笔</span>
+                <span class="card-more" onclick="switchTab('idea')">全部 →</span>
+              </div>
+              <p class="dual-count"><span id="ideaCount">3</span>/20</p>
+              <textarea class="idea-quick" id="ideaQuick" placeholder="闪过的念头..." maxlength="200" rows="2"></textarea>
+              <button class="btn-record" id="ideaRecordBtn">记录</button>
+              <p class="dual-tip">想到好玩的事情时可以记下来</p>
+            </div>
+          </div>
+
+          <!-- 每日一句 DAILY ENGLISH -->
+          <div class="card daily-en">
+            <div class="en-label">每日一句 · DAILY ENGLISH</div>
+            <p class="en-quote" id="dailyQuote">Done is better than perfect.</p>
+            <p class="en-cn" id="dailyCn">完成比完美更重要。</p>
+          </div>
+
+          <!-- 成长日历 / 时间轴 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="pin">📈</span> 成长日历</span>
+              <span class="card-more" onclick="switchTab('plan')">去计划 →</span>
+            </div>
+            <p class="dual-sub">近7天你完成的任务节奏</p>
+            <div class="growth-week" id="growthWeek"></div>
+            <div class="growth-foot" id="growthFoot"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ==================== 今日打卡（聚合页） ==================== -->
+      <section class="page" id="page-checkin">
+        <div class="page-header checkin-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1"><p class="page-main-title">☀️ 今日打卡</p><p class="page-sub" id="checkinDate">今天需要做什么，一页看清</p></div>
+          <div class="checkin-ring" id="checkinRing"><span>0%</span></div>
+        </div>
+        <div class="scroll checkin-scroll">
+          <section class="card habit-card">
+            <div class="section-title"><div><small>DAILY ROUTINE</small><b>今天的生活清单</b></div><span id="habitProgress">0 / 0</span></div>
+            <div class="habit-list" id="habitList"></div>
+            <div class="habit-add">
+              <input id="habitNameInput" maxlength="16" placeholder="添加自己的习惯">
+              <input id="habitTimeInput" type="time">
+              <button id="habitAddBtn">＋</button>
+            </div>
+          </section>
+
+          <section class="card today-overview-card">
+            <div class="section-title"><div><small>TODAY OVERVIEW</small><b>今日进度</b></div></div>
+            <div class="today-overview">
+              <button onclick="switchTab('plan')"><span>📋</span><b id="ciTaskProgress">0/0</b><small>今日任务</small></button>
+              <button onclick="switchTab('water')"><span>💧</span><b id="ciWaterProgress">0/8</b><small>喝水</small></button>
+              <button onclick="openHealthTab('dailyworkout')"><span>🏃</span><b id="ciSportProgress">0min</b><small>今日跟练</small></button>
+              <button onclick="switchTab('knowledge')"><span>📖</span><b id="ciReadProgress">未打卡</b><small>阅读</small></button>
+              <button onclick="openHealthTab('diet')"><span>🥣</span><b id="ciDietProgress">0餐</b><small>饮食打卡</small></button>
+              <button onclick="switchTab('study')"><span>⏳</span><b id="ciFocusProgress">0min</b><small>专注学习</small></button>
+            </div>
+            <div class="checkin-breakdown" id="checkinBreakdown" aria-label="今日各项完成率"></div>
+          </section>
+
+          <section class="card fat-card">
+            <div class="section-title"><div><small>BODY PLAN</small><b>温和减脂计划</b></div><span class="fat-status" id="fatStatus">未设置</span></div>
+            <div class="fat-settings">
+              <label>目标体重<input type="number" id="fatTargetWeight" min="35" max="200" step="0.1"><i>kg</i></label>
+              <label>每周目标<select id="fatWeeklyGoal"><option value="0.25">-0.25 kg</option><option value="0.5">-0.5 kg</option><option value="0.75">-0.75 kg</option></select></label>
+              <button id="saveFatPlanBtn">生成计划</button>
+            </div>
+            <div class="fat-dashboard" id="fatDashboard"></div>
+            <p class="fat-note">计划用于生活管理参考；不建议极端节食，如有健康问题请咨询专业人士。</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- ==================== 目标中心 ==================== -->
+      <section class="page" id="page-goals">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1"><p class="page-main-title">🎯 目标中心</p><p class="page-sub">安排每天 · 规划每周 · 看见坚持</p></div>
+        </div>
+        <div class="scroll goals-scroll">
+          <div class="goal-tabs"><button class="active" data-goal-tab="daily">每日目标</button><button data-goal-tab="weekly">周目标</button><button data-goal-tab="stats">统计</button></div>
+          <section class="goal-panel active" id="goalPanelDaily">
+            <div class="card goal-editor">
+              <div class="section-title"><div><small>DAILY GOALS</small><b>每天想坚持什么</b></div></div>
+              <div class="goal-create"><input id="goalDailyName" maxlength="18" placeholder="例如：早起、背单词"><input id="goalDailyTime" type="time"><button id="goalDailyAdd">添加</button></div>
+              <p class="goal-help">添加后可直接选择每周哪几天执行。</p>
+            </div>
+            <div class="goal-list" id="goalDailyList"></div>
+          </section>
+          <section class="goal-panel" id="goalPanelWeekly">
+            <div class="card goal-editor">
+              <div class="section-title"><div><small>WEEKLY GOALS</small><b>本周想完成几次</b></div></div>
+              <div class="weekly-create"><input id="goalWeeklyName" maxlength="18" placeholder="例如：运动"><input id="goalWeeklyTarget" type="number" min="1" max="99" value="3"><input id="goalWeeklyUnit" maxlength="6" placeholder="次"><button id="goalWeeklyAdd">添加</button></div>
+            </div>
+            <div class="weekly-goal-list" id="weeklyGoalList"></div>
+          </section>
+          <section class="goal-panel" id="goalPanelStats">
+            <div class="card"><div class="section-title"><div><small>LAST 7 DAYS</small><b>近7天完成率</b></div><span id="goalWeekRate">0%</span></div><div class="goal-chart" id="goalChart"></div></div>
+            <div class="card"><div class="section-title"><div><small>THIS WEEK</small><b>本周目标统计</b></div></div><div id="goalStatsSummary"></div></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ==================== 计划页 ==================== -->
+      <section class="page" id="page-plan">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div>
+            <p class="page-main-title">📋 每日计划</p>
+            <p class="page-sub">管理今日任务、本周计划与长期目标</p>
+          </div>
+          <div class="page-badge" id="planBadge">4 / 20</div>
+        </div>
+
+        <div class="scroll plan-scroll">
+          <!-- Tab切换 -->
+          <div class="plan-tabs">
+            <button class="ptab active" data-ptab="today">今日任务</button>
+            <button class="ptab" data-ptab="week">本周计划</button>
+            <button class="ptab" data-ptab="long">长期目标</button>
+          </div>
+
+          <!-- 分类标签 -->
+          <div class="cat-tags" id="catTags">
+            <button class="ctag active" data-cat="all">全部</button>
+            <button class="ctag" data-cat="工作">工作</button>
+            <button class="ctag" data-cat="常规">常规</button>
+            <button class="ctag" data-cat="学习">学习</button>
+            <button class="ctag" data-cat="生活">生活</button>
+            <button class="ctag" data-cat="健康">健康</button>
+          </div>
+
+          <!-- 添加任务 -->
+          <div class="add-task-bar">
+            <input type="text" id="planTaskInput" placeholder="添加任务..." maxlength="40">
+            <select id="planCatSelect">
+              <option value="常规">常规</option>
+              <option value="工作">工作</option>
+              <option value="学习">学习</option>
+              <option value="生活">生活</option>
+              <option value="健康">健康</option>
+            </select>
+            <select id="planPrioritySelect" aria-label="任务优先级">
+              <option value="normal">普通</option>
+              <option value="high">重要</option>
+              <option value="low">稍后</option>
+            </select>
+            <input type="date" id="planDueDate" aria-label="截止日期">
+            <button class="btn-add-green" id="planAddBtn">+ 添加</button>
+          </div>
+
+          <!-- 任务清单 -->
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">今日任务清单</span>
+              <span class="task-progress" id="planProgress">1/3 已完成</span>
+            </div>
+            <div class="plan-task-list" id="planTaskList"></div>
+            <div class="reward-hint" id="rewardHint">
+              📦 完成全部任务后可领取 🪙<span id="rewardCoins">+2</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 灵感页 ==================== -->
+      <section class="page" id="page-idea">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div>
+            <p class="page-main-title">💡 灵感</p>
+            <p class="page-sub">灵感随笔 · 视觉灵感</p>
+          </div>
+          <div class="page-badge" id="ideaBadge">6 / 20</div>
+        </div>
+
+        <div class="scroll idea-scroll">
+          <!-- 灵感随笔区 -->
+          <div class="card idea-note-card">
+            <div class="idea-input-row">
+              <textarea class="idea-full" id="ideaFullInput" placeholder="闪过的念头..." maxlength="500" rows="2"></textarea>
+              <button class="btn-record btn-record-lg" id="ideaFullBtn">记录</button>
+            </div>
+            <div class="idea-list" id="ideaList"></div>
+          </div>
+
+          <!-- 灵感收藏夹 -->
+          <div class="card idea-collection-card">
+            <div class="card-head">
+              <span class="card-title">✨ 灵感收藏 <small id="recDate">共 0 条</small></span>
+              <div class="vis-head-btns">
+                <button class="btn-sm" id="refreshRecBtn">🔄 换一批</button>
+                <button class="btn-sm btn-sm-primary" id="visAddToggle">＋ 添加</button>
+              </div>
+            </div>
+
+            <!-- 添加表单（默认收起） -->
+            <div class="vis-form hidden" id="visForm">
+              <p class="vis-form-label">选个图标</p>
+              <div class="vis-icon-picker" id="visIconPicker">
+                <button class="vis-icon-opt active" data-icon="🎬">🎬</button>
+                <button class="vis-icon-opt" data-icon="🎨">🎨</button>
+                <button class="vis-icon-opt" data-icon="🏛️">🏛️</button>
+                <button class="vis-icon-opt" data-icon="📷">📷</button>
+                <button class="vis-icon-opt" data-icon="🌈">🌈</button>
+                <button class="vis-icon-opt" data-icon="📐">📐</button>
+                <button class="vis-icon-opt" data-icon="🎵">🎵</button>
+                <button class="vis-icon-opt" data-icon="📚">📚</button>
+                <button class="vis-icon-opt" data-icon="🔗">🔗</button>
+                <button class="vis-icon-opt" data-icon="✨">✨</button>
+              </div>
+              <input type="text" id="visTitleInput" placeholder="名字，比如《瞬息全宇宙》" maxlength="40">
+              <textarea id="visDescInput" placeholder="为什么喜欢 / 经典文案 / 自己的总结见解…（可不填）" maxlength="1000" rows="4"></textarea>
+              <input type="text" id="visLinkInput" placeholder="网页链接（可不填）" maxlength="300">
+              <p class="vis-form-label" style="margin-top:4px;">视频（可选，跟练 / 影视 / 教程都能存）</p>
+              <div class="vis-video-row">
+                <input type="text" id="visVideoInput" placeholder="粘贴视频链接（B站 / YouTube / 直接 mp4）" maxlength="500">
+                <button type="button" class="btn-sm" id="visVideoFileBtn">📁 本地上传</button>
+                <input type="file" id="visVideoFile" accept="video/*" class="hidden">
+              </div>
+              <p class="vis-file-hint" id="visFileHint"></p>
+              <div class="vis-form-btns">
+                <button class="btn-sm" id="visCancelBtn">取消</button>
+                <button class="btn-add-green" id="visSaveBtn">存进收藏</button>
+              </div>
+            </div>
+
+            <div class="vis-grid" id="visGrid"></div>
+            <p class="tip-text" id="visTip">点「换一批」从你的收藏里随机翻牌 · 点卡片看详情</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 知识页 ==================== -->
+      <section class="page" id="page-knowledge">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div>
+            <p class="page-main-title">📚 知识</p>
+            <p class="page-sub">灵感随笔 · 英文积累 · 视觉灵感 · 阅读日记</p>
+          </div>
+          <div class="page-badge" id="knowBadge">5 / 20</div>
+        </div>
+
+        <div class="scroll know-scroll">
+          <!-- 子Tab -->
+          <div class="know-tabs" id="knowTabs">
+            <button class="ktab" data-ktab="note">💡 灵感随笔</button>
+            <button class="ktab active" data-ktab="english">📖 英文积累</button>
+            <button class="ktab" data-ktab="visual">🎨 视觉灵感</button>
+            <button class="ktab" data-ktab="reading">📕 阅读日记</button>
+            <button class="ktab" data-ktab="library">🗂️ 知识库</button>
+          </div>
+
+          <!-- 知识收藏库 -->
+          <div class="kpanel" id="kp-library">
+            <section class="card knowledge-editor">
+              <div class="section-title"><div><small>KNOWLEDGE INBOX</small><b>收藏一条知识</b></div></div>
+              <div class="knowledge-form">
+                <input id="knowledgeTitle" maxlength="40" placeholder="标题，例如：蛋白质摄入原则">
+                <select id="knowledgeCategory"><option>学习</option><option>英语</option><option>健身</option><option>做饭</option><option>生活</option><option>其他</option></select>
+                <select id="knowledgeType"><option value="note">文字笔记</option><option value="link">网页链接</option><option value="course">课程笔记</option><option value="video">视频链接</option></select>
+                <input id="knowledgeTags" maxlength="40" placeholder="标签，用空格分开">
+                <textarea id="knowledgeContent" rows="5" maxlength="3000" placeholder="写下知识内容、总结或粘贴链接…"></textarea>
+                <button id="knowledgeSaveBtn">保存到知识库</button>
+              </div>
+            </section>
+            <section class="card knowledge-library-card">
+              <div class="knowledge-toolbar"><input id="knowledgeSearch" placeholder="搜索标题、内容或标签"><select id="knowledgeFilter"><option value="all">全部分类</option><option>学习</option><option>英语</option><option>健身</option><option>做饭</option><option>生活</option><option>其他</option></select></div>
+              <div class="knowledge-stats" id="knowledgeStats"></div>
+              <div class="knowledge-list" id="knowledgeList"></div>
+            </section>
+          </div>
+
+          <!-- 英文积累面板 -->
+          <div class="kpanel active" id="kp-english">
+            <div class="en-intro">
+              <span class="en-target">🎯 今日英语推荐</span>
+              <span class="en-hint">随机英语学习完也可以领金币</span>
+            </div>
+            <div class="learn-grid">
+              <div class="learn-card" data-learn="sentence">
+                <div class="lc-top"><span class="lc-icon">💬</span><span class="lc-tag">每日<br>一句</span><button class="lc-done" data-lc="sentence">完成学习<br>🪙+1</button></div>
+                <p class="lc-en">"Get busy living or get busy dying."</p>
+                <p class="lc-trans">要什么活着，要么忙着死。</p>
+                <p class="lc-author">— Stephen King</p>
+              </div>
+              <div class="learn-card" data-learn="word">
+                <div class="lc-top"><span class="lc-icon">🔤</span><span class="lc-tag">每日<br>单词</span><button class="lc-done" data-lc="word">完成学习<br>🪙+1</button></div>
+                <p class="lc-word">Profound <small>深刻的，</small></p>
+                <p class="lc-meaning">意义深远的</p>
+                <p class="lc-example">例句：The book had a profound impact on me.</p>
+              </div>
+              <div class="learn-card" data-learn="reading">
+                <div class="lc-top"><span class="lc-icon">📖</span><span class="lc-tag">每日<br>阅读</span><button class="lc-done" data-lc="reading">完成学习<br>🪙+1</button></div>
+                <p class="lc-book">On Kindness</p>
+                <p class="lc-snippet">No act of kindness, no matter how small, is ever wasted. Kindness is a language which the deaf can hear and the blind can see. Be kind whenever possible. It is always possible.</p>
+                <p class="lc-author">— Aesop / Mark Twain</p>
+              </div>
+              <div class="learn-card" data-learn="writing">
+                <div class="lc-top"><span class="lc-icon">✏️</span><span class="lc-tag">每日<br>写作</span><button class="lc-done" data-lc="writing">完成学习<br>🪙+1</button></div>
+                <p class="lc-prompt">Write a review of the last movie or book you enjoyed.</p>
+                <p class="lc-tip">💡 练习评价性语言</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 阅读日记面板 -->
+          <div class="kpanel" id="kp-reading">
+            <div class="read-tabs">
+              <button class="rtab active" data-rtab="reading">📖 在读</button>
+              <button class="rtab" data-rtab="recommend">⭐ 为你推荐</button>
+            </div>
+
+            <!-- 在读 -->
+            <div class="rpanel active" id="rp-reading">
+              <div class="streak-card">
+                <div class="streak-left">
+                  <span class="streak-fire">🔥</span>
+                  <span class="streak-days" id="readStreak">0 天</span>
+                </div>
+                <div class="streak-right">
+                  <p class="streak-desc">连续阅读打卡 · 目标：每天10分钟</p>
+                  <button class="btn-checkin" id="readCheckinBtn">今日打卡</button>
+                </div>
+              </div>
+              <div class="add-book-form">
+                <div class="book-fields">
+                  <input type="text" id="bookName" placeholder="书名">
+                  <input type="text" id="bookAuthor" placeholder="作者">
+                  <input type="number" id="bookPages" placeholder="总页数">
+                  <input type="number" id="bookRead" placeholder="读到">
+                </div>
+                <div class="book-status-row">
+                  <select class="book-status" id="bookStatus"><option value="reading">在读</option><option value="want">想读</option><option value="finished">读完</option><option value="paused">暂时搁置</option></select>
+                  <button class="btn-add-green" id="addBookBtn">+ 添加</button>
+                </div>
+              </div>
+              <div class="book-list" id="bookList">
+                <div class="empty-state">📚 还没有添加书籍</div>
+              </div>
+              <div class="reading-note-editor hidden" id="readingNoteEditor">
+                <div class="section-title"><div><small>READING NOTE</small><b id="readingNoteBookName">记录阅读</b></div><button class="study-small-btn" id="readingNoteClose">关闭</button></div>
+                <input type="hidden" id="readingNoteBookId">
+                <div class="reading-note-grid"><input type="number" id="readingNotePage" min="0" placeholder="本次读到第几页"><input type="number" id="readingNoteRating" min="1" max="5" placeholder="喜爱程度 1-5"></div>
+                <textarea id="readingNoteQuote" rows="3" maxlength="1000" placeholder="摘抄原文…"></textarea>
+                <textarea id="readingNoteThought" rows="4" maxlength="1500" placeholder="自己的感想…"></textarea>
+                <input id="readingNoteSummary" maxlength="100" placeholder="用一句话总结这次阅读">
+                <button id="readingNoteSave">保存阅读笔记</button>
+              </div>
+              <div class="reading-notes" id="readingNotes"></div>
+            </div>
+
+            <!-- 为你推荐 -->
+            <div class="rpanel" id="rp-recommend">
+              <p class="tip-text">○ 不知道看什么可以看推荐哈</p>
+              <div class="rec-book-list" id="recBookList"></div>
+              <button class="btn-like-rec" id="likeRecBtn">👍 点击推荐 &gt;</button>
+            </div>
+          </div>
+
+          <!-- 灵感随笔面板（知识页复用） -->
+          <div class="kpanel" id="kp-note">
+            <div class="card"><p class="tip-text">灵感随笔内容与灵感页同步，去 💡灵感 页查看～</p></div>
+          </div>
+
+          <!-- 视觉灵感面板（知识页复用） -->
+          <div class="kpanel" id="kp-visual">
+            <div class="card"><p class="tip-text">视觉灵感内容与灵感页同步，去 💡灵感 页查看～</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 我的页 ==================== -->
+      <!-- ==================== 开始今天（打开app后的首屏激励页） ==================== -->
+      <section class="page active" id="page-start">
+        <div class="start-bg">
+          <button class="start-ham drawer-toggle-btn">☰</button>
+          <!-- 悬浮欢迎卡片 -->
+          <div class="start-card">
+            <!-- 头像（浮在卡片顶部边缘） -->
+            <div class="start-avatar-wrap" id="startAvatarWrap" title="点击更换头像">
+              <img id="startAvatarImg" src="" alt="" class="start-avatar-img hidden">
+              <span class="start-avatar-fallback" id="startAvatarFallback">🍏</span>
+              <div class="start-camera" id="startCamera">✎</div>
+              <input type="file" id="avatarInput" accept="image/*" class="hidden">
+            </div>
+            <!-- 日期 -->
+            <p class="start-date" id="startDate">8月1日 · 周六</p>
+            <!-- 问候 -->
+            <p class="start-greet" id="startGreet">宿主大人，今天也要元气满满哦</p>
+            <!-- 鼓励语 -->
+            <p class="start-encourage" id="startEncourage">你今天真棒，简直是天才来的。</p>
+            <p class="start-flatter" id="startFlatter">苹果绿配你 绝配！因为你就是那么清新脱俗。</p>
+            <!-- 按钮 -->
+            <button class="btn-start-day" id="startDayBtn">开始今天 ✨</button>
+            <p class="start-hint">点一下，开启今日计划</p>
+          </div>
+          <!-- 装饰圆 -->
+          <div class="start-decor start-decor-1"></div>
+          <div class="start-decor start-decor-2"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 日历页 ==================== -->
+      <section class="page" id="page-calendar">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div>
+            <p class="page-main-title">📅 我的日历</p>
+            <p class="page-sub">点开某一天，看看那天你做了什么</p>
+          </div>
+          <div class="page-badge" id="calBadge"></div>
+        </div>
+        <div class="scroll cal-scroll">
+          <div class="card">
+            <div class="cal-nav">
+              <button class="cal-arrow" id="cbPrev">‹</button>
+              <span class="cal-title" id="cbTitle"></span>
+              <button class="cal-arrow" id="cbNext">›</button>
+            </div>
+            <div class="cal-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+            <div class="cal-days" id="cbDays"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title"><span class="pin">📌</span> <span id="cbDetailTitle">这一天</span></span>
+            </div>
+            <div id="cbDetailBody"><p class="tip-text">点上面的日期，看看那天你完成了什么 ✨</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 学习中心 ==================== -->
+      <section class="page" id="page-study">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1"><p class="page-main-title">🎓 学习中心</p><p class="page-sub" id="studyTodaySub">课程、作业和考试集中管理</p></div>
+          <span class="study-week-badge" id="studyWeekBadge">本周</span>
+        </div>
+        <div class="scroll study-scroll">
+          <section class="card study-today-card">
+            <div class="section-title"><div><small>TODAY'S CLASSES</small><b>今天的课程</b></div><span id="studyTodayCount">0 节</span></div>
+            <div class="study-today-list" id="studyTodayList"></div>
+          </section>
+
+          <section class="card focus-card">
+            <div class="section-title"><div><small>FOCUS SESSION</small><b>专注学习</b></div><span id="focusTodayTotal">今日 0 分钟</span></div>
+            <div class="focus-main">
+              <div class="focus-clock" id="focusClock"><b id="focusTime">25:00</b><small id="focusState">准备开始</small></div>
+              <div class="focus-setup">
+                <label class="focus-topic-label">专注内容<input id="focusTopic" list="focusTopicOptions" maxlength="30" placeholder="例如：背单词、写作业、复习高数" value=""></label>
+                <datalist id="focusTopicOptions"><option value="自主学习"></option></datalist>
+                <select id="focusDuration"><option value="25">25 分钟</option><option value="45">45 分钟</option><option value="60">60 分钟</option><option value="90">90 分钟</option></select>
+                <div class="focus-actions"><button id="focusStartBtn">开始专注</button><button id="focusFinishBtn" class="hidden">提前完成</button></div>
+              </div>
+            </div>
+            <div class="focus-recent" id="focusRecent"></div>
+          </section>
+
+          <section class="card study-import-card">
+            <div class="section-title"><div><small>QUICK IMPORT</small><b>导入课程表</b></div></div>
+            <div class="study-import-actions">
+              <button id="courseImageBtn">📷 上传课表截图</button>
+              <button id="courseTextToggle">📝 批量粘贴识别</button>
+              <input class="hidden" type="file" id="courseImageFile" accept="image/*">
+            </div>
+            <div class="course-image-preview hidden" id="courseImagePreview"></div>
+            <div class="course-text-import hidden" id="courseTextImport">
+              <textarea id="courseImportText" rows="5" placeholder="每行一节，例如：&#10;周一 08:00-09:40 高等数学 @教学楼A101&#10;周三 14:00-15:40 大学英语 @逸夫楼203"></textarea>
+              <button id="courseParseBtn">识别并导入</button>
+            </div>
+            <p class="study-help" id="courseImportHint">截图识别会在设备支持时本地完成，不会上传图片；识别后可检查课程信息。</p>
+          </section>
+
+          <section class="card timetable-card">
+            <div class="section-title"><div><small>WEEKLY TIMETABLE</small><b>我的一周</b></div><button class="study-small-btn" id="courseAddToggle">＋ 添加</button></div>
+            <div class="course-editor hidden" id="courseEditor">
+              <input id="courseName" maxlength="24" placeholder="课程名称">
+              <select id="courseDay"><option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="0">周日</option></select>
+              <input id="courseStart" type="time" value="08:00"><input id="courseEnd" type="time" value="09:40">
+              <input id="courseLocation" maxlength="24" placeholder="教室 / 地点">
+              <button id="courseSaveBtn">保存课程</button>
+            </div>
+            <div class="timetable" id="timetable"></div>
+          </section>
+
+          <section class="card assignment-card">
+            <div class="section-title"><div><small>DEADLINES</small><b>作业与考试</b></div><span id="assignmentPending">0 待完成</span></div>
+            <div class="assignment-add">
+              <input id="assignmentName" maxlength="32" placeholder="作业、考试或复习任务">
+              <input id="assignmentDue" type="datetime-local">
+              <button id="assignmentAddBtn">添加</button>
+            </div>
+            <div class="assignment-list" id="assignmentList"></div>
+          </section>
+
+          <section class="card weekly-report-card">
+            <div class="section-title"><div><small>WEEKLY REPORT</small><b>近 7 天成长周报</b></div><span id="weeklyReportScore">0%</span></div>
+            <div class="weekly-report-grid" id="weeklyReportGrid"></div>
+            <div class="study-week-chart" id="studyWeekChart"></div>
+            <p class="weekly-report-note" id="weeklyReportNote"></p>
+          </section>
+        </div>
+      </section>
+
+      <!-- ==================== 我的（设置） ==================== -->
+      <section class="page" id="page-settings">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn" id="settingsDrawerBtn">☰</button>
+          <div style="flex:1;">
+            <p class="page-main-title">👤 我的</p>
+          </div>
+        </div>
+
+        <div class="scroll settings-scroll">
+          <!-- 个人档案主卡 -->
+          <div class="me-card profile-hero" id="meCard">
+            <div class="me-avatar-wrap" id="meAvatarWrap" title="点击更换头像">
+              <img id="meAvatarImg" src="" alt="" class="me-avatar-img hidden">
+              <span class="me-avatar-fallback" id="meAvatarFallback">宝</span>
+              <input type="file" id="meAvatarInput" accept="image/*" class="hidden">
+            </div>
+            <div class="profile-copy">
+              <span class="profile-kicker">MY LITTLE SPACE</span>
+              <p class="me-name" id="meName">宝宝</p>
+              <p class="me-sub">今天也要闪闪发光呀 ✨</p>
+            </div>
+            <button type="button" class="avatar-edit-badge" id="avatarEditBtn">📷 更换头像</button>
+          </div>
+
+          <!-- 昵称设置 -->
+          <div class="card settings-card">
+            <div class="settings-title-row"><span class="settings-icon">🌷</span><div><p class="me-label">个人资料</p><p class="settings-desc">让工作台更像你自己的空间</p></div></div>
+            <div class="setting-row">
+              <label>我的昵称</label>
+              <input type="text" id="nickInput" placeholder="给自己起个昵称…" maxlength="12">
+              <button class="btn-sm" id="nickSaveBtn">保存</button>
+            </div>
+            <p class="settings-note">用于首页问候和个人档案，最多 12 个字。</p>
+          </div>
+
+          <div class="card settings-card life-card">
+            <div class="settings-title-row"><span class="settings-icon">🌍</span><div><p class="me-label">生命档案</p><p class="settings-desc">记录你来到地球的那一天</p></div></div>
+            <div class="life-form">
+              <label>出生日期<input type="date" id="birthDate"></label>
+              <label>出生时间（可选）<input type="time" id="birthTime"></label>
+              <label>出生城市（可选）<input type="text" id="birthCity" maxlength="20" placeholder="例如：上海"></label>
+              <button class="btn-save" id="saveLifeBtn">保存生命档案</button>
+            </div>
+            <div class="life-stats hidden" id="lifeStats"></div>
+          </div>
+
+          <!-- 主题皮肤 -->
+          <div class="card settings-card">
+            <div class="settings-title-row"><span class="settings-icon">🎨</span><div><p class="me-label">主题皮肤</p><p class="settings-desc">选择今天喜欢的心情色彩</p></div></div>
+            <div class="theme-categories" id="themeCategories">
+              <button class="active" data-theme-group="all">全部</button><button data-theme-group="cream">奶油纯色</button><button data-theme-group="vivid">双色氛围</button><button data-theme-group="pattern">韩系图案</button><button data-theme-group="dot">波点专辑</button>
+            </div>
+            <div class="theme-picker" id="themePicker">
+              <button class="theme-dot" data-t="blue" style="--dot:#9CC0E2;--dot2:#EAF2FB;"><span></span><b>云朵浅蓝</b><small>清爽安静</small><i>✓</i></button>
+              <button class="theme-dot" data-t="mint" style="--dot:#97D6C8;--dot2:#E6F5EF;"><span></span><b>青苹果</b><small>自然治愈</small><i>✓</i></button>
+              <button class="theme-dot" data-t="lavender" style="--dot:#BFAEF0;--dot2:#F1ECFA;"><span></span><b>薰衣草</b><small>温柔梦幻</small><i>✓</i></button>
+              <button class="theme-dot" data-t="peach" style="--dot:#F4B593;--dot2:#FCEDE3;"><span></span><b>奶油蜜桃</b><small>温暖元气</small><i>✓</i></button>
+              <button class="theme-dot" data-t="sakura" style="--dot:#F0AECC;--dot2:#FBEAF2;"><span></span><b>樱花粉</b><small>甜美浪漫</small><i>✓</i></button>
+              <button class="theme-dot vivid" data-t="sunset" style="--dot:#F28B70;--dot2:#F5C66F;"><span></span><b>海盐日落</b><small>珊瑚 × 金黄</small><i>✓</i></button>
+              <button class="theme-dot vivid" data-t="matcha" style="--dot:#8FAA72;--dot2:#D39A67;"><span></span><b>抹茶焦糖</b><small>绿意 × 暖棕</small><i>✓</i></button>
+              <button class="theme-dot vivid" data-t="berry" style="--dot:#D968A0;--dot2:#8E78D6;"><span></span><b>莓果气泡</b><small>玫红 × 葡萄紫</small><i>✓</i></button>
+              <button class="theme-dot vivid" data-t="aurora" style="--dot:#4CA9A4;--dot2:#8977CE;"><span></span><b>极光夜色</b><small>青绿 × 星云紫</small><i>✓</i></button>
+              <button class="theme-dot vivid" data-t="coast" style="--dot:#45A6A1;--dot2:#E8C94F;"><span></span><b>柠檬海岸</b><small>海蓝 × 柠檬黄</small><i>✓</i></button>
+              <button class="theme-dot pattern-dot" data-t="seouldot" style="--dot:#2F3437;--dot2:#D9B66F;"><span></span><b>首尔奶油波点</b><small>黑点 × 燕麦奶</small><i>✓</i></button>
+              <button class="theme-dot pattern-cherry" data-t="cherry" style="--dot:#C94F55;--dot2:#6F9278;"><span></span><b>樱桃苏打</b><small>樱桃红 × 鼠尾草</small><i>✓</i></button>
+              <button class="theme-dot pattern-grid" data-t="gingham" style="--dot:#719181;--dot2:#D6A5A8;"><span></span><b>韩系小格纹</b><small>灰绿 × 雾粉</small><i>✓</i></button>
+              <button class="theme-dot pattern-check" data-t="butter" style="--dot:#D7AD3C;--dot2:#7893B8;"><span></span><b>黄油野餐布</b><small>奶油黄 × 牛仔蓝</small><i>✓</i></button>
+              <button class="theme-dot pattern-ribbon" data-t="blueberry" style="--dot:#66719C;--dot2:#C594A8;"><span></span><b>蓝莓丝带</b><small>灰蓝 × 干枯玫瑰</small><i>✓</i></button>
+              <button class="theme-dot pattern-dot" data-t="cookie" style="--dot:#806C5A;--dot2:#DDBF9A;"><span></span><b>曲奇波点</b><small>可可点 × 奶油杏</small><i>✓</i></button>
+              <button class="theme-dot pattern-dot" data-t="dalmatian" style="--dot:#3D4144;--dot2:#D5D8D6;"><span></span><b>斑点牛奶</b><small>不规则黑 × 冷白</small><i>✓</i></button>
+              <button class="theme-dot pattern-dot" data-t="pinkdot" style="--dot:#D989A5;--dot2:#F2CDD8;"><span></span><b>草莓奶昔点</b><small>小粉点 × 奶白</small><i>✓</i></button>
+            </div>
+          </div>
+
+          <!-- 数据管理 -->
+          <div class="card settings-card data-card">
+            <div class="settings-title-row"><span class="settings-icon">🗂️</span><div><p class="me-label">数据管理</p><p class="settings-desc">备份属于你的每一条记录</p></div></div>
+            <div class="data-summary" id="dataSummary"></div>
+            <div class="data-actions">
+              <button class="data-btn primary" id="exportDataBtn"><span>↓</span><b>导出备份</b><small>保存到本机</small></button>
+              <button class="data-btn" id="importDataBtn"><span>↑</span><b>恢复备份</b><small>从文件导入</small></button>
+              <button class="data-btn danger" id="clearDataBtn"><span>×</span><b>清空数据</b><small>恢复初始状态</small></button>
+              <input type="file" id="importDataFile" accept="application/json,.json" class="hidden">
+            </div>
+            <p class="settings-note data-note">备份包含任务、日记文字、灵感、健康记录和个人设置；本地上传的图片与视频文件暂不包含在内。</p>
+          </div>
+
+          <div class="card settings-card cloud-card">
+            <div class="settings-title-row"><span class="settings-icon">☁️</span><div><p class="me-label">多人账号与云同步</p><p class="settings-desc">每个人登录自己的账号，数据互相隔离</p></div><span class="cloud-status" id="cloudStatus">未配置</span></div>
+            <div class="cloud-user hidden" id="cloudUserPanel"><p id="cloudUserText"></p><div><button id="cloudPushBtn">↑ 上传当前数据</button><button id="cloudPullBtn">↓ 下载云端数据</button><button id="cloudLogoutBtn">退出账号</button></div></div>
+            <p class="settings-note">文字和记录可同步；当前版本的大视频仍保存在本机。首次使用需要先执行项目里的云端建表脚本。</p>
+          </div>
+
+          <!-- 关于 -->
+          <div class="card settings-card about-card">
+            <div class="settings-title-row"><span class="settings-icon">☁️</span><div><p class="me-label">关于工作台</p><p class="settings-desc">你的小小成长空间</p></div><span class="version-pill">v0.3</span></div>
+            <div class="about">未登录时数据保存在当前浏览器；登录后可手动同步文字记录到自己的云端账号。本地大视频暂不跨设备同步。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 喝水打卡（独立页） ==================== -->
+      <section class="page" id="page-water">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1;">
+            <p class="page-main-title">💧 喝水打卡</p>
+          </div>
+        </div>
+
+        <div class="scroll water-scroll">
+            <div id="hp-water">
+              <div class="water-hero">
+                <div class="water-bottle">
+                  <svg viewBox="0 0 84 148" width="76" height="134">
+                    <defs>
+                      <clipPath id="bottleClip">
+                        <path d="M24 22 h36 v12 c0 7 6 11 6 20 v76 a12 12 0 0 1-12 12 h-24 a12 12 0 0 1-12-12 v-76 c0-9 6-13 6-20 z"/>
+                      </clipPath>
+                      <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" style="stop-color:var(--primary); stop-opacity:0.85"/>
+                        <stop offset="100%" style="stop-color:var(--primary-dark); stop-opacity:0.9"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M24 22 h36 v12 c0 7 6 11 6 20 v76 a12 12 0 0 1-12 12 h-24 a12 12 0 0 1-12-12 v-76 c0-9 6-13 6-20 z" fill="rgba(255,255,255,0.75)"/>
+                    <g clip-path="url(#bottleClip)">
+                      <rect id="waterFill" x="0" y="142" width="84" height="148" fill="url(#waterGrad)"/>
+                    </g>
+                    <path d="M24 22 h36 v12 c0 7 6 11 6 20 v76 a12 12 0 0 1-12 12 h-24 a12 12 0 0 1-12-12 v-76 c0-9 6-13 6-20 z" fill="none" style="stroke:var(--primary-dark)" stroke-width="2.5" stroke-linejoin="round" opacity="0.55"/>
+                    <rect x="28" y="8" width="28" height="14" rx="5" style="fill:var(--primary-dark)" opacity="0.75"/>
+                    <line x1="66" y1="70" x2="72" y2="70" style="stroke:var(--primary-dark)" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+                    <line x1="66" y1="92" x2="74" y2="92" style="stroke:var(--primary-dark)" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+                    <line x1="66" y1="114" x2="72" y2="114" style="stroke:var(--primary-dark)" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="water-info">
+                  <p class="water-count"><span id="waterDone">0</span><span class="water-total"> / 8 杯</span></p>
+                  <p class="water-ml" id="waterMl">0 / 2000 ml</p>
+                  <div class="water-bar"><div class="water-bar-fill" id="waterBarFill"></div></div>
+                  <p class="water-next" id="waterNext">今天还没喝水哦，先来一杯吧 💧</p>
+                </div>
+              </div>
+
+              <div class="water-stats">
+                <div class="wstat"><p class="wstat-num" id="wStreak">0</p><p class="wstat-label">连续达标</p></div>
+                <div class="wstat"><p class="wstat-num" id="wMonth">0</p><p class="wstat-label">本月达标</p></div>
+                <div class="wstat"><p class="wstat-num" id="wTotal">0</p><p class="wstat-label">累计打卡</p></div>
+              </div>
+
+              <div class="water-proof">
+                <div><p class="wr-title">📷 打卡影像（可选）</p><p class="wr-sub">图片或视频二选一，选好后点击对应杯数完成打卡</p></div>
+                <button class="btn-sm" id="waterProofBtn">选择图片 / 视频</button>
+                <input type="file" id="waterProofFile" accept="image/*,video/*" class="hidden">
+                <div class="water-proof-preview hidden" id="waterProofPreview"></div>
+              </div>
+
+              <div class="water-head">
+                <p class="me-label" style="margin:0;">今日饮水时间表</p>
+                <span class="water-makeup-left" id="waterMakeupLeft">今日可补卡 3 次</span>
+                <button class="water-edit-btn" id="waterEditBtn">⚙️ 调整时间</button>
+              </div>
+
+              <div class="water-edit hidden" id="waterEditBox">
+                <p class="tip-text" style="margin:0 0 8px;">设定属于你的八杯水时间，改完点保存</p>
+                <div class="water-time-grid" id="waterTimeGrid"></div>
+                <div class="form-actions">
+                  <button class="btn-save" id="waterTimeSave">✅ 保存时间</button>
+                  <button class="btn-cancel" id="waterTimeReset">恢复默认</button>
+                </div>
+              </div>
+
+              <div class="water-list" id="waterList"></div>
+
+              <div class="water-remind">
+                <div>
+                  <p class="wr-title">💧 到点提醒</p>
+                  <p class="wr-sub">到时间会弹提示，记得让浏览器允许通知</p>
+                </div>
+                <label class="wswitch"><input type="checkbox" id="waterRemindToggle"><span class="wslider"></span></label>
+              </div>
+
+              <p class="tip-text">每杯约 250ml，一天 2000ml。小口慢饮比一次灌下去更好吸收～</p>
+            </div>
+        </div>
+      </section>
+
+      <!-- ==================== 健康管理（独立页） ==================== -->
+      <section class="page" id="page-health">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1;">
+            <p class="page-main-title">🥗 健康管理</p>
+          </div>
+        </div>
+
+        <div class="scroll health-scroll">
+            <div class="health-tabs" id="healthTabs">
+              <button class="htab active" data-htab="dailyworkout">✨ 每日跟练</button>
+              <button class="htab" data-htab="recipe">🍳 厨房秘籍</button>
+              <button class="htab" data-htab="diet">🥣 饮食打卡</button>
+              <button class="htab" data-htab="training">🏋️ 训练计划</button>
+              <button class="htab" data-htab="mealprep">🛒 每周备餐</button>
+              <button class="htab" data-htab="smart">🧠 智能食谱</button>
+              <button class="htab" data-htab="sport">🏃 运动记录</button>
+              <button class="htab" data-htab="video">🎬 视频跟练</button>
+              <button class="htab" data-htab="calendar">📅 月度打卡</button>
+            </div>
+
+            <!-- 每日跟练合集 -->
+            <div class="hpanel active" id="hp-dailyworkout">
+              <section class="daily-workout-hero" id="dailyWorkoutHero"></section>
+              <div class="daily-workout-actions"><button id="startDailyWorkout">▶ 开始今日跟练</button><button id="toggleWorkoutCollection">＋ 新建合集</button></div>
+              <div class="workout-collection-create hidden" id="workoutCollectionCreate">
+                <input id="collectionName" maxlength="24" placeholder="合集名称，例如：周日柔韧放松">
+                <input id="collectionFocus" maxlength="24" placeholder="训练目标，例如：手臂、腰腹、拉伸">
+                <select id="collectionDay"><option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="0">周日</option><option value="all">每天</option></select>
+                <button id="saveWorkoutCollection">创建合集</button>
+              </div>
+              <div class="workout-collection-list" id="workoutCollectionList"></div>
+            </div>
+
+            <!-- 厨房秘籍 -->
+            <div class="hpanel" id="hp-recipe">
+              <p class="hp-tip">收集你喜欢的菜品、配方与视频教程</p>
+              <button class="btn-add-green" id="addDishBtn" style="width:auto;margin-bottom:10px;">+ 添加菜品</button>
+              <div class="dish-form hidden" id="dishForm">
+                <div class="form-grid">
+                  <input type="text" id="dishName" placeholder="菜品名称 *">
+                  <input type="text" id="dishCat" placeholder="🍳 家常菜">
+                  <input type="text" id="dishIngredients" placeholder="所需食材（如：鸡胸肉）">
+                  <input type="text" id="dishSeasoning" placeholder="调料（如：生抽、蚝油）">
+                  <input type="text" id="dishSource" placeholder="来源(可选)">
+                  <input type="text" id="dishPrice" placeholder="预估价格（¥）">
+                  <input type="text" id="dishImg" placeholder="图片URL">
+                  <input type="text" id="dishVideoUrl" placeholder="视频链接（B站/YouTube等）">
+                  <input type="number" id="dishTotalKcal" min="0" placeholder="整道菜总热量 kcal">
+                  <input type="number" id="dishServings" min="1" value="1" placeholder="可分几份">
+                  <input type="number" id="dishProtein" min="0" step="0.1" placeholder="每份蛋白质 g">
+                  <input type="number" id="dishCarbs" min="0" step="0.1" placeholder="每份碳水 g">
+                  <input type="number" id="dishFat" min="0" step="0.1" placeholder="每份脂肪 g">
+                </div>
+                <div class="media-upload-row">
+                  <button type="button" class="btn-sm" id="dishImageBtn">🖼️ 上传图片</button>
+                  <button type="button" class="btn-sm" id="dishVideoBtn">🎬 上传视频</button>
+                  <span id="dishMediaTip">未选择本地媒体</span>
+                  <input type="file" id="dishImageFile" accept="image/*" class="hidden">
+                  <input type="file" id="dishVideoFile" accept="video/*" class="hidden">
+                </div>
+                <div class="form-actions">
+                  <button class="btn-save" id="saveDishBtn">✅ 保存菜品</button>
+                  <button class="btn-cancel" id="cancelDishBtn">取消</button>
+                </div>
+              </div>
+              <div class="dish-list" id="dishList">
+                <div class="empty-state">还没有菜品，点"+添加菜品"开始收集你的厨房秘籍</div>
+              </div>
+            </div>
+
+            <!-- 饮食打卡与热量账本 -->
+            <div class="hpanel" id="hp-diet">
+              <p class="hp-tip">从收藏菜品中选择实际吃了多少，免费记录每日摄入</p>
+              <div class="diet-summary" id="dietSummary"></div>
+              <div class="diet-form">
+                <input type="date" id="mealDate">
+                <select id="mealType"><option>早餐</option><option>午餐</option><option>晚餐</option><option>加餐</option></select>
+                <select id="mealDish"><option value="">选择收藏菜品</option></select>
+                <label><input type="number" id="mealServings" value="1" min="0.1" step="0.1"> 份</label>
+                <label><input type="number" id="mealKcal" min="0" placeholder="每份热量"> kcal/份</label>
+                <button class="btn-sm" id="mealPhotoBtn">📷 餐食图片</button>
+                <input type="file" id="mealPhotoFile" accept="image/*" class="hidden">
+                <span id="mealPhotoTip">未选择图片</span>
+                <button class="btn-add-green" id="addMealBtn">＋ 完成饮食打卡</button>
+              </div>
+              <div class="meal-list" id="mealList"></div>
+            </div>
+
+            <!-- 专业训练计划 -->
+            <div class="hpanel" id="hp-training">
+              <p class="hp-tip">建立自己的训练模板，记录动作、组数、次数和重量</p>
+              <div class="workout-create">
+                <input id="workoutPlanName" maxlength="18" placeholder="计划名称，如：练腿日">
+                <input id="workoutPlanFocus" maxlength="18" placeholder="目标部位，如：腿臀">
+                <button id="addWorkoutPlan">＋ 新建训练模板</button>
+              </div>
+              <div class="workout-plan-list" id="workoutPlanList"></div>
+              <div class="workout-history"><p class="me-label">最近训练</p><div id="workoutHistoryList"></div></div>
+            </div>
+
+            <!-- 每周备餐与采购 -->
+            <div class="hpanel" id="hp-mealprep">
+              <p class="hp-tip">把收藏菜谱安排进本周菜单，食材会自动汇总成采购清单</p>
+              <div class="mealprep-week" id="mealPrepWeek"></div>
+              <div class="shopping-card">
+                <div class="section-title"><div><small>SHOPPING LIST</small><b>本周采购清单</b></div><button class="btn-sm" id="resetShopping">清除勾选</button></div>
+                <div class="shopping-list" id="shoppingList"></div>
+              </div>
+            </div>
+
+            <!-- 智能食谱 -->
+            <div class="hpanel" id="hp-smart">
+              <p class="me-label">个人身体档案</p>
+              <div class="body-form">
+                <div class="body-row">
+                  <label>性别</label><select id="bodyGender"><option value="女">女</option><option value="男">男</option></select>
+                  <label>年龄</label><input type="number" id="bodyAge" value="22" min="12" max="100">
+                  <label>身高（CM）</label><input type="number" id="bodyHeight" value="170">
+                  <label>体重（KG）</label><input type="number" id="bodyWeight" value="65">
+                  <label>月度饮食预算（¥）</label><input type="number" id="bodyBudget" value="2000">
+                </div>
+                <label>健康目标</label>
+                <select id="bodyGoal" style="width:100%;margin-bottom:8px;">
+                  <option value="maintain">保持健康</option>
+                  <option value="lose">温和减脂</option>
+                  <option value="gain">增肌增重</option>
+                </select>
+                <label style="margin-top:8px;">活动水平</label>
+                <select id="bodyActivity" style="width:100%;margin-bottom:12px;">
+                  <option value="sedentary">久坐（几乎不运动）</option>
+                  <option value="light">轻度活动（每周1-3天）</option>
+                  <option value="moderate">中度活动（每周3-5天）</option>
+                  <option value="active">高度活动（每周6-7天）</option>
+                </select>
+                <div class="nutri-stats" id="nutriStats">
+                  <div class="nutri-item"><p class="nutri-num" id="bmrVal">1402</p><p class="nutri-label">基础代谢 BMR kcal/天</p></div>
+                  <div class="nutri-item"><p class="nutri-num" id="tdeeVal">1682</p><p class="nutri-label">每日消耗 TDEE kcal/天</p></div>
+                  <div class="nutri-item"><p class="nutri-num" id="bmiVal">22.5</p><p class="nutri-label">BMI 指数 正常</p></div>
+                  <div class="nutri-item"><p class="nutri-num" id="dailyBudgetVal">¥67</p><p class="nutri-label">每日预算 30天共 ¥2000</p></div>
+                </div>
+                <button class="btn-generate" id="genMenuBtn">🍽️ 生成智能食谱菜单</button>
+              </div>
+            </div>
+
+            <!-- 运动记录（手动记录已完成的运动） -->
+            <div class="hpanel" id="hp-sport">
+              <p class="hp-tip">记录你今天练了什么，攒成自己的成长曲线</p>
+              <div class="sport-form" id="exForm">
+                <input type="text" id="exName" placeholder="运动名称（如：跑步 / 帕梅拉）">
+                <input type="number" id="exDuration" placeholder="时长（分钟）">
+                <input type="number" id="exKcal" placeholder="消耗（kcal）">
+                <input type="date" id="exDate">
+                <button class="btn-add-green" id="addExBtn">+ 记录</button>
+              </div>
+              <div class="sport-list" id="exLogList">
+                <div class="empty-state">还没有运动记录，今天动一下就记一笔吧 🏃</div>
+              </div>
+            </div>
+
+            <!-- 视频跟练（收藏跟练视频，随时开练） -->
+            <div class="hpanel" id="hp-video">
+              <p class="hp-tip">把想跟练的视频存进来，随时开练</p>
+              <div class="sport-form" id="sportForm">
+                <input type="text" id="sportName" placeholder="视频名称（如：帕梅拉15分钟燃脂）">
+                <input type="text" id="sportUrl" placeholder="视频链接（B站/YouTube/Keep等）">
+                <input type="number" id="sportDuration" placeholder="时长（分钟）">
+                <input type="text" id="sportType" placeholder="有氧">
+                <button class="btn-add-green" id="addSportBtn">+ 添加</button>
+              </div>
+              <div class="sport-list" id="sportList">
+                <div class="empty-state">🎬 还没有添加跟练视频，从上方添加吧</div>
+              </div>
+            </div>
+
+            <!-- 月度打卡日历 -->
+            <div class="hpanel" id="hp-calendar">
+              <div class="cal-nav">
+                <button id="calPrev">◀ 上月</button>
+                <span id="calTitle">2026年7月</span>
+                <button id="calNext">下月 ▶</button>
+              </div>
+              <div class="cal-stats">
+                <div class="cal-stat"><p class="cal-num" id="calDays">0</p><p class="cal-label">运动天数</p></div>
+                <div class="cal-stat"><p class="cal-num" id="calTotalMin">0min</p><p class="cal-label">总时长</p></div>
+                <div class="cal-stat"><p class="cal-num" id="calAvgMin">0min</p><p class="cal-label">日均时长</p></div>
+                <div class="cal-stat"><p class="cal-num" id="calTypes">0</p><p class="cal-label">运动类型数</p></div>
+              </div>
+              <div class="calendar" id="calendar"></div>
+            </div>
+        </div>
+      </section>
+
+      <!-- ==================== 我的星球（日记时间流） ==================== -->
+      <section class="page" id="page-diary">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1;"><p class="page-main-title">🌍 我的星球</p><p class="page-sub">记录来到地球后的普通日子</p></div>
+          <div class="page-badge" id="diaryCount">0 篇</div>
+        </div>
+        <div class="scroll diary-scroll">
+          <div class="diary-compose card">
+            <div class="diary-compose-head"><span>今天想留下什么？</span><small id="diaryEarthDay"></small></div>
+            <textarea id="diaryText" maxlength="2000" rows="4" placeholder="分享今天的照片、心情或一件小事……"></textarea>
+            <div class="diary-fields">
+              <select id="diaryMood"><option value="☀️ 开心">☀️ 开心</option><option value="🌿 平静">🌿 平静</option><option value="🌧️ 低落">🌧️ 低落</option><option value="🔥 元气">🔥 元气</option><option value="🌙 疲惫">🌙 疲惫</option></select>
+              <input id="diaryLocation" maxlength="30" placeholder="📍 地点（可选）">
+              <input id="diaryTags" maxlength="60" placeholder="# 标签，用空格分开">
+            </div>
+            <div class="diary-media-tools">
+              <button class="btn-sm" id="diaryMediaBtn">＋ 图片 / 视频</button>
+              <input type="file" id="diaryMediaFile" accept="image/*,video/*" multiple class="hidden">
+              <span id="diaryMediaStatus">最多 9 张图片或 1 段视频</span>
+              <button class="btn-record" id="publishDiaryBtn">发布到我的星球</button>
+            </div>
+          </div>
+          <div class="diary-feed" id="diaryFeed"></div>
+        </div>
+      </section>
+
+      <!-- ==================== 电子木鱼 ==================== -->
+      <section class="page" id="page-muyu">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1;"><p class="page-main-title">🪵 电子木鱼</p><p class="page-sub">烦恼清零 · 功德加一</p></div>
+          <button class="muyu-sound active" id="muyuSoundBtn" aria-label="切换敲击音">🔔</button>
+        </div>
+        <div class="scroll muyu-scroll">
+          <div class="muyu-card">
+            <p class="muyu-eyebrow">DAILY MERIT</p>
+            <div class="muyu-stats"><div><b id="muyuTotal">0</b><span>累计功德</span></div><i></i><div><b id="muyuToday">0</b><span>今日功德</span></div></div>
+            <div class="muyu-stage" id="muyuStage">
+              <button class="wood-fish" id="woodFishBtn" aria-label="敲木鱼">
+                <span class="fish-body"><i class="fish-eye"></i><i class="fish-mouth"></i><em>福</em></span>
+                <span class="fish-base"></span>
+              </button>
+              <button class="muyu-stick" id="muyuStick" tabindex="-1" aria-hidden="true"><span></span></button>
+            </div>
+            <p class="muyu-mantra" id="muyuMantra">轻敲一下，今日功德 +1</p>
+            <p class="muyu-tip">点击木鱼或按空格键 · 心诚则灵</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 闲话铺（独立页） ==================== -->
+      <section class="page" id="page-chat">
+        <div class="page-header">
+          <button class="back-btn drawer-toggle-btn">☰</button>
+          <div style="flex:1;">
+            <p class="page-main-title">💬 闲话铺</p>
+          </div>
+        </div>
+
+        <div class="scroll chat-scroll">
+            <div class="chat-welcome">
+              <div class="chat-avatar-lg"><img id="chatAvatarImg" class="hidden" alt="我的头像"><span id="chatAvatarFallback">宝</span></div>
+              <p class="chat-date" id="chatDate">7月29日 · 周三</p>
+              <p class="chat-greet" id="chatGreet">嗨，宝宝</p>
+              <p class="chat-encourage" id="chatEncourage">你今天真棒，简直是天才来的。</p>
+              <p class="chat-flatter" id="chatFlatter">苹果绿配你 绝配！因为你就是那么清新脱俗。</p>
+            </div>
+            <div class="chat-area" id="chatArea">
+              <div class="chat-msg bot">
+                <div class="msg-bubble">嗨～我是你的工作台小助手 💡 可以帮你记录灵感、管理任务、提醒习惯、或者只是聊聊天～有什么想说的尽管告诉我！</div>
+              </div>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" id="chatInput" placeholder="发消息或按住说话..." maxlength="300">
+              <button class="btn-send" id="chatSendBtn">发送</button>
+            </div>
+        </div>
+      </section>
+
+      <div class="focus-mode hidden" id="focusMode">
+        <div class="focus-mode-dots"></div>
+        <button class="focus-mode-exit" id="focusModeExit">暂时退出</button>
+        <div class="focus-mode-inner">
+          <p class="focus-mode-label">FOCUSING ON</p>
+          <h2 id="focusModeTopic">自主学习</h2>
+          <div class="focus-mode-ring" id="focusModeRing"><b id="focusModeTime">25:00</b><small id="focusModeState">保持专注</small></div>
+          <p class="focus-encourage" id="focusEncourage">慢慢来，把这一小段时间留给自己。</p>
+          <div class="focus-mode-actions"><button id="focusModePause">暂停</button><button id="focusModeFinish">完成专注</button></div>
+        </div>
+      </div>
+
+      <div class="workout-follow-mode hidden" id="workoutFollowMode">
+        <div class="workout-follow-view"><button id="workoutFollowFullscreen">⛶ 全屏</button><button id="workoutFollowPortrait">▯ 竖屏</button><button id="workoutFollowLandscape">▭ 横屏</button></div>
+        <button class="workout-follow-exit" id="workoutFollowExit">暂时退出</button>
+        <div class="workout-follow-inner">
+          <div class="workout-follow-head"><small id="workoutFollowStep">第 1 段 / 3</small><b id="workoutFollowCollection">今日跟练</b></div>
+          <div class="workout-follow-media" id="workoutFollowMedia"></div>
+          <div class="workout-follow-copy"><span id="workoutFollowDuration">10 分钟</span><h2 id="workoutFollowTitle">热身</h2><p id="workoutFollowDesc"></p></div>
+          <div class="workout-follow-progress"><i id="workoutFollowBar"></i></div>
+          <div class="workout-follow-actions"><button id="workoutFollowPrev">上一段</button><button id="workoutFollowComplete">完成本段</button><button id="workoutFollowNext">下一段</button></div>
+        </div>
+      </div>
+
+      <!-- ===== 详情阅读弹层 ===== -->
+      <div class="avatar-crop-mask hidden" id="avatarCropMask">
+        <div class="avatar-crop-sheet">
+          <div class="crop-title"><div><b>裁剪头像</b><small>拖动图片调整位置</small></div><button id="avatarCropClose">×</button></div>
+          <div class="avatar-crop-stage" id="avatarCropStage"><img id="avatarCropImage" alt="待裁剪头像"><div class="crop-circle-guide"></div></div>
+          <label class="crop-zoom">缩放<input type="range" id="avatarCropZoom" min="1" max="3" step="0.01" value="1"></label>
+          <div class="crop-actions"><button class="btn-cancel" id="avatarCropCancel">取消</button><button class="btn-save" id="avatarCropSave">使用这个头像</button></div>
+        </div>
+      </div>
+
+      <div class="text-card-mask hidden" id="textCardMask">
+        <div class="text-card-sheet">
+          <div class="crop-title"><div><b>文案照片预览</b><small>调整样式与字号，图片高度会自动适应内容</small></div><button id="textCardClose">×</button></div>
+          <div class="text-card-preview"><img id="textCardPreviewImg" alt="文案图片预览"></div>
+          <div class="text-card-controls">
+            <label>卡片样式<select id="textCardStyle"><option value="cream">奶油留白</option><option value="dot">波点手账</option><option value="mono">极简黑白</option><option value="sakura">樱花便签</option><option value="sage">鼠尾草绿</option><option value="night">蓝莓夜色</option><option value="paper">复古报纸</option><option value="gingham">韩系格纹</option></select></label>
+            <label>文字大小 <span id="textCardFontValue">46</span><input type="range" id="textCardFontSize" min="30" max="68" step="2" value="46"></label>
+            <label>顶部标题<input type="text" id="textCardTitle" maxlength="28" value="MY LITTLE PLANET"></label>
+            <label>署名<input type="text" id="textCardAuthor" maxlength="18"></label>
+            <label class="text-card-footer-field">右下角英文<input type="text" id="textCardFooter" maxlength="40" placeholder="例如：PRIVATE DIARY ✦"></label>
+            <label class="text-card-check"><input type="checkbox" id="textCardShowDate" checked> 显示发布日期</label>
+          </div>
+          <div class="crop-actions"><button class="btn-cancel" id="textCardCancel">取消</button><button class="btn-save" id="textCardDownload">保存到设备</button></div>
+        </div>
+      </div>
+
+      <div class="detail-mask hidden" id="detailMask">
+        <div class="detail-sheet">
+          <div class="detail-handle"></div>
+          <div class="detail-head">
+            <span class="detail-tag" id="detailTag"></span>
+            <button class="detail-close" id="detailClose">×</button>
+          </div>
+          <h3 class="detail-title" id="detailTitle"></h3>
+          <div class="detail-video" id="detailVideo"></div>
+          <div class="detail-body" id="detailBody"></div>
+          <a class="pick-link hidden" id="detailLink" target="_blank" rel="noopener"></a>
+          <p class="detail-src" id="detailSrc"></p>
+        </div>
+      </div>
+
+      <!-- ===== 左侧功能抽屉 ===== -->
+      <div class="drawer-overlay hidden" id="drawerOverlay"></div>
+      <div class="drawer hidden" id="drawer">
+        <div class="drawer-head">
+          <button class="drawer-profile" id="drawerProfileBtn">
+            <span class="drawer-avatar"><img id="drawerAvatarImg" class="hidden" alt="我的头像"><i id="drawerAvatarFallback">宝</i></span>
+            <span class="drawer-profile-copy"><b id="drawerNick">宝宝</b><small>进入我的与设置 →</small></span>
+          </button>
+          <button class="drawer-close" id="drawerClose">×</button>
+        </div>
+        <div class="drawer-body">
+          <p class="drawer-group">今天</p>
+          <button class="drawer-item drawer-featured" data-drawer="checkin"><span class="drawer-icon">☀️</span>今日打卡</button>
+          <button class="drawer-item" data-drawer="goals"><span class="drawer-icon">🎯</span>目标中心</button>
+          <button class="drawer-item" data-drawer="plan"><span class="drawer-icon">📋</span>完整计划</button>
+          <button class="drawer-item" data-drawer="study"><span class="drawer-icon">🎓</span>学习中心</button>
+          <p class="drawer-group">记录与成长</p>
+          <button class="drawer-item" data-drawer="diary"><span class="drawer-icon">🌍</span>我的星球</button>
+          <button class="drawer-item" data-drawer="idea"><span class="drawer-icon">💡</span>灵感收藏</button>
+          <button class="drawer-item" data-drawer="knowledge"><span class="drawer-icon">📚</span>知识与阅读</button>
+          <button class="drawer-item" data-drawer="calendar"><span class="drawer-icon">📅</span>我的日历</button>
+          <p class="drawer-group">健康生活</p>
+          <button class="drawer-item" data-drawer="health"><span class="drawer-icon">🥗</span>健康中心</button>
+          <button class="drawer-item" data-drawer="water"><span class="drawer-icon">💧</span>喝水管理</button>
+          <p class="drawer-group">放松一下</p>
+          <button class="drawer-item" data-drawer="muyu"><span class="drawer-icon">🪵</span>电子木鱼</button>
+          <button class="drawer-item" data-drawer="chat"><span class="drawer-icon">💬</span>闲话铺</button>
+          <div class="drawer-divider"></div>
+          <button class="drawer-item" data-drawer="settings"><span class="drawer-icon">👤</span>我的与设置</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="cloud-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
