@@ -1,9 +1,11 @@
-/* 部署前由管理员填写一次。
- * 这里只填 LeanCloud 国际版的公开凭证（App ID / App Key），绝不填写 Master Key。
- * 服务器地址由 app.js 根据 App ID 前 8 位自动拼接为 https://{前8位}.api.lncldglobal.com，无需手动填。
+/**
+ * 工作台 - 云端配置（果创云 YesApi）
+ * 
+ * 注册地址：https://www.yesapi.cn/ （免费，国内直连）
+ * 获取方式：登录控制台 → 应用管理 → 复制 app_key
+ * 
+ * 安全提示：只填 app_key，绝对不要填 app_secret（签名可在控制台关闭）
  */
 window.WORKBENCH_CLOUD_CONFIG = {
-  provider: 'leancloud',
-  appId: '在此填入你的 LeanCloud App ID',
-  appKey: '在此填入你的 LeanCloud App Key'
+  appKey: ''  // ← 在这里填入你的果创云 App Key
 };
