@@ -1,8 +1,7 @@
-# Cloudflare Pages 安全头配置
+# Cloudflare Pages 安全头配置（对所有路径生效）
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src 'self' https://api.yesapi.cn; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
-*/
