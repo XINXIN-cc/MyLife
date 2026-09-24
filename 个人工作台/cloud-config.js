@@ -7,5 +7,5 @@
  * 安全提示：只填 app_key，绝对不要填 app_secret（签名可在控制台关闭）
  */
 window.WORKBENCH_CLOUD_CONFIG = {
-  appKey: ''  // ← 在这里填入你的果创云 App Key
+  appKey: 'A44AFA944ED018D7683ED2D5A1B07B77'  // 果创云 App Key（已填，勿泄露）
 };
