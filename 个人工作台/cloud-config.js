@@ -1,11 +1,7 @@
 /**
- * 工作台 - 云端配置（果创云 YesApi）
- * 
- * 注册地址：https://www.yesapi.cn/ （免费，国内直连）
- * 获取方式：登录控制台 → 应用管理 → 复制 app_key
- * 
- * 安全提示：只填 app_key，绝对不要填 app_secret（签名可在控制台关闭）
+ * 工作台 - 云端配置
+ * 自 Cloudflare Pages Functions 版起，云同步使用站点内置后端（/api/*），
+ * 同源、免域名、无需任何外部 App Key，此处不再需要配置。
+ * 仍保留本文件，避免 index.html 引用时报错。
  */
-window.WORKBENCH_CLOUD_CONFIG = {
-  appKey: 'A44AFA944ED018D7683ED2D5A1B07B77'  // 果创云 App Key（已填，勿泄露）
-};
+window.WORKBENCH_CLOUD_CONFIG = {};
