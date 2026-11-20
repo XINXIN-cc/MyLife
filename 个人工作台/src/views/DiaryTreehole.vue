@@ -85,11 +85,11 @@
         <n-card :bordered="false" class="mb-4">
           <div class="flex items-center justify-between mb-3">
             <span class="font-medium text-base" :style="{ color: 'var(--lw-text)' }">匿名树洞</span>
-            <span class="text-xs" :style="{ color: 'var(--lw-text-secondary)' }">说出来，就有人听见</span>
+            <span class="text-xs" :style="{ color: cloudOn ? 'var(--lw-primary)' : 'var(--lw-text-secondary)' }">{{ cloudOn ? '🌐 云端共享 · 大家都能看到' : '说出来，就有人听见' }}</span>
           </div>
           <n-input v-model:value="newPost" type="textarea" placeholder="今天遇到什么事了？匿名说出来吧~" :rows="3" :autosize="{ minRows: 3, maxRows: 6 }" />
           <div class="flex justify-end mt-3">
-            <n-button type="primary" @click="publishPost" :disabled="!newPost.trim()">匿名发布</n-button>
+            <n-button type="primary" :loading="treeholeLoading" @click="publishPost" :disabled="!newPost.trim()">匿名发布</n-button>
           </div>
         </n-card>
 
@@ -165,15 +165,23 @@ function saveDiary() {
 }
 function delDiary() { if (!selected.value) return; diaries.value = diaries.value.filter((d) => d.id !== selected.value.id); saveDiaries(); selected.value = null; message.success('已删除') }
 
-// ===== 树洞 =====
+// ===== 树洞（云端公共，所有人可见；本地缓存兜底） =====
 const newPost = ref('')
 const posts = ref([])
-const anonymousNames = ['迷路的小猫', '熬夜的星星', '发呆的云朵', '想睡的熊猫', '漂流的瓶子', '匿名的小熊', '深夜的猫头鹰', '迷路的狐狸']
-const avatarColors = ['#7BA7C7', '#D4A5A5', '#9BB7A4', '#B8A9C9', '#E8B4A0', '#C5B4A0', '#A0B8C8', '#B0C4A0']
-const aiReplies = ['抱抱你~ 不管发生什么，总会过去的。', '你不是一个人，很多人都有过类似的感受。', '辛苦了，今天也要好好吃饭好好睡觉呀。', '能说出来就已经很棒了。', '慢慢来，一切都会好起来的。', '你值得被温柔对待呀。', '加油，明天又是新的一天~']
+const treeholeLoading = ref(false)
+const cloudOn = ref(false)
 
-function loadPosts() { posts.value = getStore('treehole_posts', []) }
-function savePosts() { setStore('treehole_posts', posts.value) }
+// 匿名访客 ID：同一浏览器固定，用于稳定马甲 + 点赞去重（不跟手机号挂钩）
+function getVisitorId() {
+  let id = localStorage.getItem('lw_treehole_visitor')
+  if (!id) {
+    id = 'v_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)
+    localStorage.setItem('lw_treehole_visitor', id)
+  }
+  return id
+}
+const visitorId = getVisitorId()
+
 function timeAgo(ts) {
   const diff = Date.now() - ts
   const m = Math.floor(diff / 60000)
@@ -185,19 +193,66 @@ function timeAgo(ts) {
 }
 const postsWithTime = computed(() => posts.value.map((p) => ({ ...p, timeLabel: timeAgo(p.createdAt) })))
 
-function publishPost() {
-  if (!newPost.value.trim()) return
-  const idx = Math.floor(Math.random() * anonymousNames.length)
-  posts.value.unshift({
-    id: genId(), content: newPost.value.trim(), nickname: anonymousNames[idx], avatarChar: anonymousNames[idx][0],
-    avatarBg: avatarColors[idx], createdAt: Date.now(), likes: 0, liked: false,
-    aiReply: aiReplies[Math.floor(Math.random() * aiReplies.length)],
-  })
-  savePosts(); newPost.value = ''; message.success('已匿名发布')
+// 云端拉列表；失败则退回本地缓存
+async function loadPosts() {
+  try {
+    const res = await fetch(`/api/treehole?visitorId=${encodeURIComponent(visitorId)}`)
+    const data = await res.json()
+    if (Array.isArray(data.posts)) {
+      cloudOn.value = !!data.cloud
+      posts.value = data.posts
+      setStore('treehole_posts', posts.value)
+      return
+    }
+  } catch (e) { /* 网络异常走本地 */ }
+  cloudOn.value = false
+  posts.value = getStore('treehole_posts', [])
 }
-function toggleLike(id) {
-  const p = posts.value.find((x) => x.id === id); if (!p) return
-  p.liked = !p.liked; p.likes += p.liked ? 1 : -1; savePosts()
+
+async function publishPost() {
+  if (!newPost.value.trim() || treeholeLoading.value) return
+  treeholeLoading.value = true
+  try {
+    const res = await fetch('/api/treehole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'publish', content: newPost.value.trim(), visitorId }),
+    })
+    const data = await res.json()
+    if (data.ok && Array.isArray(data.posts)) {
+      cloudOn.value = true
+      posts.value = data.posts
+      setStore('treehole_posts', posts.value)
+      newPost.value = ''
+      message.success('已匿名发布，大家都能看到啦')
+      return
+    }
+    message.warning(data.error || '发布失败，请稍后再试')
+  } catch (e) {
+    message.warning('网络连接失败，请稍后再试')
+  } finally {
+    treeholeLoading.value = false
+  }
+}
+
+async function toggleLike(id) {
+  if (treeholeLoading.value) return
+  treeholeLoading.value = true
+  try {
+    const res = await fetch('/api/treehole', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'like', postId: id, visitorId }),
+    })
+    const data = await res.json()
+    if (data.ok && Array.isArray(data.posts)) {
+      cloudOn.value = true
+      posts.value = data.posts
+      setStore('treehole_posts', posts.value)
+    }
+  } catch (e) { /* 忽略 */ } finally {
+    treeholeLoading.value = false
+  }
 }
 
 onMounted(() => { loadDiaries(); loadPosts() })
