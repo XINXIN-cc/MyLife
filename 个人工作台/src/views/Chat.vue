@@ -1,7 +1,7 @@
 <template>
-  <div class="chat-layout">
+    <div class="chat-layout">
     <!-- ========== 左侧：对话列表 ========== -->
-    <div class="chat-sidebar">
+    <div class="chat-sidebar" :class="{ 'conv-list-open': convListOpen }" @click="convListOpen = false">
       <div class="px-3 pt-3 pb-2">
         <n-button type="primary" block @click="newChat" class="!rounded-xl">
           <template #icon><n-icon><CreateOutline /></n-icon></template>
@@ -48,6 +48,10 @@
       <!-- 顶部栏 -->
       <div class="chat-header">
         <div class="flex items-center gap-2 min-w-0">
+          <!-- 手机端：呼出对话列表 -->
+          <n-button text circle size="small" class="conv-toggle-btn" @click="convListOpen = !convListOpen">
+            <template #icon><n-icon size="20"><ListOutline /></n-icon></template>
+          </n-button>
           <n-icon size="18" :style="{ color: 'var(--lw-primary)' }"><ChatbubbleEllipsesOutline /></n-icon>
           <span class="font-semibold text-sm truncate">{{ currentConv?.title || '闲话铺' }}</span>
         </div>
@@ -83,7 +87,12 @@
 
         <!-- 消息列表 -->
         <div v-else class="space-y-4">
-          <div v-for="m in messages" :key="m.id" class="flex gap-3" :class="m.role === 'user' ? 'flex-row-reverse' : ''">
+          <!-- 折叠：更早的聊天记录 -->
+          <div v-if="hiddenCount > 0" class="history-fold" @click="historyExpanded = !historyExpanded">
+            <n-icon size="14"><ChevronUp v-if="historyExpanded" /><ChevronDown v-else /></n-icon>
+            <span>{{ historyExpanded ? '收起历史消息' : `展开更早的 ${hiddenCount} 条消息` }}</span>
+          </div>
+          <div v-for="m in visibleMessages" :key="m.id" class="flex gap-3" :class="m.role === 'user' ? 'flex-row-reverse' : ''">
             <div
               class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-medium"
               :style="{ background: m.role === 'user' ? 'var(--lw-primary)' : 'var(--lw-bg)', color: m.role === 'user' ? '#fff' : 'var(--lw-text)', border: '1px solid var(--lw-border)' }"
@@ -199,11 +208,12 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import {
   BookmarkOutline, ChatbubbleEllipsesOutline, SparklesOutline, HeartOutline, SendOutline,
   WaterOutline, CheckmarkDoneOutline, HelpCircleOutline, HappyOutline, SunnyOutline,
-  CreateOutline, TrashOutline, MicOutline, VolumeHighOutline,
+  CreateOutline, TrashOutline, MicOutline, VolumeHighOutline, ListOutline,
+  ChevronUp, ChevronDown,
 } from '@vicons/ionicons5'
 import { genId, getStore, setStore, todayStr } from '@/utils/storage'
 import { streamChat, fetchMemories, deleteMemory } from '@/api/chat'
@@ -321,6 +331,16 @@ const memoryEnabled = ref(getStore('chat_memory_enabled', true))
 
 const currentConv = computed(() => conversations.value.find(c => c.id === currentConvId.value))
 const messages = computed(() => currentConv.value?.messages || [])
+
+// ===== 手机端 UI 状态：对话列表抽屉 + 历史消息折叠 =====
+const convListOpen = ref(false)
+const historyExpanded = ref(false)
+const HISTORY_LIMIT = 6   // 折叠时保留最近 N 条
+const hiddenCount = computed(() => Math.max(0, messages.value.length - HISTORY_LIMIT))
+const visibleMessages = computed(() => historyExpanded.value ? messages.value : messages.value.slice(-HISTORY_LIMIT))
+
+// 切换对话/新开对话时重置折叠
+watch(currentConvId, () => { historyExpanded.value = false; convListOpen.value = false })
 
 // ===== 对话管理 =====
 function newChat() {
@@ -485,6 +505,7 @@ onMounted(() => {
 
 <style scoped>
 .chat-layout {
+  position: relative;
   display: flex;
   gap: 0;
   height: calc(100vh - 5rem);
@@ -571,5 +592,68 @@ onMounted(() => {
   background: color-mix(in srgb, var(--lw-primary) 8%, var(--lw-card)) !important;
   color: var(--lw-primary) !important;
   border-color: var(--lw-primary) !important;
+}
+
+/* ===== 历史消息折叠按钮 ===== */
+.history-fold {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  width: fit-content;
+  margin: 0 auto;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--lw-text-tertiary);
+  background: var(--lw-bg);
+  border: 1px dashed var(--lw-border);
+  transition: all 0.2s;
+  user-select: none;
+}
+.history-fold:hover {
+  color: var(--lw-primary);
+  border-color: var(--lw-primary);
+}
+
+/* 手机端：呼出对话列表按钮默认隐藏 */
+.conv-toggle-btn { display: none !important; }
+
+/* ===== 手机端适配（≤900px，与全局断点一致） ===== */
+@media (max-width: 900px) {
+  .chat-layout { height: calc(100vh - 8rem); min-height: 400px; }
+
+  /* 对话列表 → 左侧滑出抽屉，默认收起，留出聊天空间 */
+  .conv-toggle-btn { display: inline-flex !important; }
+  .chat-sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: min(280px, 82vw);
+    transform: translateX(-105%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+  }
+  .chat-sidebar.conv-list-open { transform: translateX(0); }
+
+  /* 消息区留白收紧 */
+  .chat-messages { padding: 14px 14px; }
+
+  /* 记忆面板 → 从右侧滑出覆盖，不再挤压聊天区 */
+  .chat-memory {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: min(300px, 88vw);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+  }
+
+  /* 输入区按钮收窄 */
+  .chat-input { padding: 10px 12px; gap: 8px; }
 }
 </style>

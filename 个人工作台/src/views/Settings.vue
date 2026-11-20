@@ -98,7 +98,7 @@
     </div>
 
     <!-- ========== Drawer：个人信息 ========== -->
-    <n-drawer v-model:show="profileDrawer" :width="400" placement="right">
+    <n-drawer v-model:show="profileDrawer" :width="drawerW(400)" placement="right">
       <template #header><span class="font-semibold text-base">个人信息</span></template>
       <div class="space-y-4">
         <div class="flex items-center gap-4 p-3 rounded-xl" :style="{ background: 'var(--lw-card)', border: '1px solid var(--lw-border)' }">
@@ -144,7 +144,7 @@
     </n-drawer>
 
     <!-- ========== Drawer：主题配色 ========== -->
-    <n-drawer v-model:show="themeDrawer" :width="460" placement="right">
+    <n-drawer v-model:show="themeDrawer" :width="drawerW(460)" placement="right">
       <template #header><span class="font-semibold text-base">主题配色</span></template>
       <div class="space-y-6">
         <div v-for="cat in THEME_CATEGORIES" :key="cat.key">
@@ -179,7 +179,7 @@
     </n-drawer>
 
     <!-- ========== Drawer：桌面宠物 ========== -->
-    <n-drawer v-model:show="petDrawer" :width="400" placement="right">
+    <n-drawer v-model:show="petDrawer" :width="drawerW(400)" placement="right">
       <template #header><span class="font-semibold text-base">桌面宠物</span></template>
       <div class="space-y-4">
         <div class="flex items-center justify-between p-3 rounded-xl" :style="{ background: 'var(--lw-card)', border: '1px solid var(--lw-border)' }">
@@ -214,7 +214,7 @@
     </n-drawer>
 
     <!-- ========== Drawer：功能管理 ========== -->
-    <n-drawer v-model:show="modulesDrawer" :width="460" placement="right">
+    <n-drawer v-model:show="modulesDrawer" :width="drawerW(460)" placement="right">
       <template #header><span class="font-semibold text-base">功能管理</span></template>
       <div class="space-y-5">
         <p class="text-sm opacity-70">勾选你想在侧边栏显示的功能模块</p>
@@ -253,7 +253,7 @@
     </n-drawer>
 
     <!-- ========== Drawer：关于 ========== -->
-    <n-drawer v-model:show="aboutDrawer" :width="380" placement="right">
+    <n-drawer v-model:show="aboutDrawer" :width="drawerW(380)" placement="right">
       <template #header><span class="font-semibold text-base">关于</span></template>
       <div class="space-y-4 text-sm">
         <div class="text-center py-4">
@@ -275,7 +275,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import {
@@ -293,6 +293,13 @@ const router = useRouter()
 const message = useMessage()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
+
+// 抽屉宽度跟随屏幕：手机上不超过 92vw，避免超出屏幕点不到
+const viewportW = ref(typeof window !== 'undefined' ? window.innerWidth : 1200)
+function onResize() { viewportW.value = window.innerWidth }
+onMounted(() => window.addEventListener('resize', onResize))
+onUnmounted(() => window.removeEventListener('resize', onResize))
+const drawerW = (px) => Math.min(px, Math.floor(viewportW.value * 0.92))
 
 // Drawer 开关
 const profileDrawer = ref(false)
