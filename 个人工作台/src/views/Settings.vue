@@ -59,6 +59,17 @@
         </div>
         <n-icon size="16" class="wx-arrow"><ChevronForwardOutline /></n-icon>
       </div>
+      <!-- AI 记忆开关（点整行或开关都能切换） -->
+      <div class="wx-row">
+        <div class="wx-row-icon" style="background: linear-gradient(135deg, #fbc2eb, #a6c1ee)">
+          <n-icon size="18" color="#fff"><SparklesOutline /></n-icon>
+        </div>
+        <div class="flex-1" @click="aiMemory = !aiMemory; onMemoryToggle()">
+          <div class="wx-row-label">AI 记忆</div>
+          <div class="wx-row-value">{{ aiMemory ? '已开启 · AI 会记住你说的重要信息' : '已关闭 · 不记录新记忆' }}</div>
+        </div>
+        <n-switch v-model:value="aiMemory" size="small" @update:value="onMemoryToggle" />
+      </div>
     </div>
 
     <!-- ========== 分组 2：关于 ========== -->
@@ -273,6 +284,7 @@ import {
 } from '@vicons/ionicons5'
 import { useUserStore } from '@/store/user'
 import { useThemeStore, themes, THEME_CATEGORIES } from '@/store/theme'
+import { getStore, setStore } from '@/utils/storage'
 import { MODULES, MODULE_GROUPS, getDefaultEnabledModules } from '@/config/modules'
 import { PET_TYPES, AVATAR_OPTIONS } from '@/config/pets'
 import { MODULE_ICONS } from '@/config/icons'
@@ -299,6 +311,13 @@ const profileForm = ref({
 const petForm = ref({ ...(userStore.user?.pet || { type: 'cat', name: '咪咪', enabled: false }) })
 
 const enabledModules = ref([...(userStore.user?.enabledModules || [])])
+
+// AI 记忆开关（与聊天页共用同一个 key）
+const aiMemory = ref(getStore('chat_memory_enabled', true))
+function onMemoryToggle() {
+  setStore('chat_memory_enabled', aiMemory.value)
+  message.success(aiMemory.value ? 'AI 记忆已开启' : 'AI 记忆已关闭')
+}
 
 const currentThemeName = computed(() => {
   const t = themes.find(x => x.id === themeStore.currentThemeId)

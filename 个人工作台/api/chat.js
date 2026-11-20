@@ -1,12 +1,21 @@
 // Vercel Serverless Function: POST /api/chat
-// 无状态转发到 DeepSeek，兼容前端 chat.js 的流式 SSE 协议
-// 密钥从 Vercel 环境变量 DEEPSEEK_API_KEY 读取
+// 流式对话 + 云端记忆（注入 + 自动提取）+ 首条消息 AI 生成标题
+// 密钥从 Vercel 环境变量读取，记忆存 Upstash Redis
 
-export default async function handler(req, res) {
+import { loadMemory, addMemoryFromChat, genConversationTitle, memoryEnabled } from './_lib/store.js'
+
+function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+}
 
+function send(res, obj) {
+  res.write('data: ' + JSON.stringify(obj) + '\n\n')
+}
+
+export default async function handler(req, res) {
+  cors(res)
   if (req.method === 'OPTIONS') { res.status(204).end(); return }
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' })
@@ -24,10 +33,22 @@ export default async function handler(req, res) {
     try { body = JSON.parse(body) } catch { body = {} }
   }
   body = body || {}
-  const { messages = [], system_prompt, health_context } = body
+  const {
+    messages = [], system_prompt, health_context,
+    user_id, memory_enabled = true, is_first = false,
+  } = body
 
-  // 构造 system prompt（注入今日健康数据，让 AI 能自然关心）
+  // 1) 读取云端记忆，注入 system prompt
   let systemContent = system_prompt || '你是一个温暖、专业的 AI 伙伴。'
+  if (memory_enabled !== false && memoryEnabled() && user_id) {
+    const memories = await loadMemory(user_id)
+    if (memories.length) {
+      const lines = memories.map(m => '- ' + m.content).join('\n')
+      systemContent += '\n\n【关于用户的记忆（自然引用，不要刻意复述或标注）】\n' + lines
+    }
+  }
+
+  // 2) 注入今日健康数据
   if (health_context) {
     const lines = []
     if (health_context.water) {
@@ -39,32 +60,36 @@ export default async function handler(req, res) {
       lines.push('打卡进度：' + c.done + '/' + c.total + ' 项，连续 ' + c.streak + ' 天')
     }
     if (lines.length) {
-      systemContent += '\n\n【今日健康状态（请在对话中适度关心）】\n' + lines.join('\n')
+      systemContent += '\n\n【今日健康状态（请在对话中适度关心，不要每条都提）】\n' + lines.join('\n')
     }
   }
 
-  // 兼容前端 {role, text} 与后端 {role, content} 两种字段
+  // 兼容前端 {role, text} 与后端 {role, content}
   const upstreamMessages = [
     { role: 'system', content: systemContent },
     ...messages
-      .filter(function (m) { return m && (m.role === 'user' || m.role === 'assistant') })
-      .map(function (m) { return { role: m.role, content: String(m.content != null ? m.content : (m.text || '')) } })
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant'))
+      .map(m => ({ role: m.role, content: String(m.content != null ? m.content : (m.text || '')) })),
   ]
+
+  // 取最后一条用户消息，供记忆提取 / 标题生成使用
+  const lastUserText = [...messages].reverse().find(m => m && m.role === 'user')
+  const userText = lastUserText ? String(lastUserText.content != null ? lastUserText.content : (lastUserText.text || '')) : ''
 
   try {
     const upstream = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
+        Authorization: 'Bearer ' + apiKey,
       },
       body: JSON.stringify({
         model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
         stream: true,
         temperature: 0.85,
         max_tokens: 2048,
-        messages: upstreamMessages
-      })
+        messages: upstreamMessages,
+      }),
     })
 
     if (!upstream.ok) {
@@ -73,7 +98,6 @@ export default async function handler(req, res) {
       return
     }
 
-    // 流式响应头
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
     res.setHeader('Cache-Control', 'no-cache, no-transform')
     res.setHeader('Connection', 'keep-alive')
@@ -82,6 +106,7 @@ export default async function handler(req, res) {
     const reader = upstream.body.getReader()
     const decoder = new TextDecoder('utf-8')
     let buffer = ''
+    let fullReply = ''
 
     while (true) {
       const chunk = await reader.read()
@@ -96,18 +121,37 @@ export default async function handler(req, res) {
         if (!data || data === '[DONE]') continue
         try {
           const j = JSON.parse(data)
-          const content = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content
-          if (content) res.write('data: ' + JSON.stringify({ content: content }) + '\n\n')
+          const content = j.choices?.[0]?.delta?.content
+          if (content) {
+            fullReply += content
+            send(res, { content })
+          }
         } catch (e) { /* 忽略解析失败的行 */ }
       }
     }
+
+    // 3) 对话结束后：AI 生成标题 + 提取记忆（失败不影响主对话）
+    if (is_first && userText) {
+      try {
+        const title = await genConversationTitle(userText)
+        if (title) send(res, { title })
+      } catch (e) { /* ignore */ }
+    }
+    if (memory_enabled !== false && memoryEnabled() && user_id && userText) {
+      try {
+        const memories = await addMemoryFromChat(user_id, userText, fullReply)
+        if (memories.length) send(res, { memory_count: memories.length })
+      } catch (e) { /* ignore */ }
+    }
+
+    send(res, { done: true })
     res.write('data: [DONE]\n\n')
     res.end()
   } catch (e) {
     if (!res.headersSent) {
       res.status(502).json({ error: '请求失败: ' + e.message })
     } else {
-      res.write('data: ' + JSON.stringify({ error: e.message }) + '\n\n')
+      send(res, { error: e.message })
       res.write('data: [DONE]\n\n')
       res.end()
     }

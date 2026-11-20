@@ -159,19 +159,41 @@
         <span class="text-sm font-medium flex items-center gap-1.5" :style="{ color: 'var(--lw-text)' }">
           <n-icon size="14" :style="{ color: 'var(--lw-primary)' }"><SparklesOutline /></n-icon>
           AI 的记忆
+          <n-tag v-if="memoryCloud" size="tiny" type="success" :bordered="false" round>☁ 云端</n-tag>
+          <n-tag v-else size="tiny" :bordered="false" round>本地</n-tag>
         </span>
         <n-button text size="tiny" type="error" @click="clearMemory" :disabled="memories.length === 0">清空</n-button>
       </div>
+
+      <!-- 记忆开关 -->
+      <div class="flex items-center justify-between mb-3 p-2 rounded-lg" :style="{ background: 'var(--lw-bg)' }">
+        <span class="text-xs" :style="{ color: 'var(--lw-text-secondary)' }">允许 AI 记住我</span>
+        <n-switch v-model:value="memoryEnabled" size="small" @update:value="onMemoryToggle" />
+      </div>
+
+      <div v-if="memoryTip" class="mb-2 text-[11px] leading-relaxed p-2 rounded-lg" :style="{ background: 'color-mix(in srgb, #e7a23a 12%, transparent)', color: '#b9761b' }">
+        {{ memoryTip }}
+      </div>
+
       <div v-if="memories.length === 0" class="text-center py-8 text-xs" :style="{ color: 'var(--lw-text-secondary)' }">
         还没有记住什么<br>和我聊聊你自己吧~
       </div>
-      <div v-else class="space-y-1.5 max-h-[55vh] overflow-auto">
+      <div v-else class="space-y-1.5 max-h-[45vh] overflow-auto">
         <div v-for="(m, i) in memories" :key="i" class="group flex items-start gap-2 p-2 rounded-lg text-xs" :style="{ background: 'var(--lw-bg)' }">
           <n-icon size="12" :style="{ color: 'var(--lw-primary)', flexShrink: 0, marginTop: 2 }"><HeartOutline /></n-icon>
           <span class="flex-1 leading-relaxed" :style="{ color: 'var(--lw-text)' }">{{ m.content }}</span>
+          <n-icon
+            size="12"
+            class="shrink-0 cursor-pointer opacity-40 hover:opacity-100"
+            :style="{ color: 'var(--lw-text-tertiary)', marginTop: 2 }"
+            title="删除这条"
+            @click="removeMemory(i)"
+          ><TrashOutline /></n-icon>
         </div>
       </div>
-      <div class="mt-3 pt-3 border-t text-xs" :style="{ borderColor: 'var(--lw-border)', color: 'var(--lw-text-tertiary)' }">我会自动记住你说过的重要信息</div>
+      <div class="mt-3 pt-3 border-t text-[11px] leading-relaxed" :style="{ borderColor: 'var(--lw-border)', color: 'var(--lw-text-tertiary)' }">
+        {{ memoryCloud ? '记忆已存云端，换设备登录同一手机号即可看到' : '当前为本地记忆模式' }}
+      </div>
     </div>
   </div>
 </template>
@@ -184,9 +206,8 @@ import {
   CreateOutline, TrashOutline, MicOutline, VolumeHighOutline,
 } from '@vicons/ionicons5'
 import { genId, getStore, setStore, todayStr } from '@/utils/storage'
-import { streamChat } from '@/api/chat'
+import { streamChat, fetchMemories, deleteMemory } from '@/api/chat'
 import { useUserStore } from '@/store/user'
-import axios from 'axios'
 import { useMessage } from 'naive-ui'
 
 const userStore = useUserStore()
@@ -226,6 +247,8 @@ const loading = ref(false)
 const messageBox = ref(null)
 const showMemory = ref(false)
 const memories = ref([])
+const memoryCloud = ref(false)   // 记忆是否已上云
+const memoryTip = ref('')        // 未配置云存储时的提示
 
 // ===== 语音相关 =====
 const isRecording = ref(false)
@@ -290,8 +313,11 @@ function speak(text) {
   window.speechSynthesis.speak(u)
 }
 
-const userId = computed(() => userStore.user?.account || 'guest')
+// 记忆 key 用手机号（用户自己填的，跨设备一致），没填则退回专属 ID
+// 后端会做 sha256 后存云端，不会明文存手机号
+const userId = computed(() => userStore.user?.phone || userStore.user?.account || 'guest')
 const aiName = computed(() => userStore.user?.aiName || '小暖')
+const memoryEnabled = ref(getStore('chat_memory_enabled', true))
 
 const currentConv = computed(() => conversations.value.find(c => c.id === currentConvId.value))
 const messages = computed(() => currentConv.value?.messages || [])
@@ -371,12 +397,6 @@ async function sendMessage() {
   loading.value = true
   scrollToBottom()
 
-  if (isFirst) {
-    // 从第一条消息截前 20 字当标题
-    const title = text.length > 20 ? text.slice(0, 20) + '...' : text
-    updateCurrentConv({ title })
-  }
-
   const history = messages.value
     .filter(m => m.id !== botMsg.id)
     .map(m => ({ role: m.role, content: m.text }))
@@ -386,6 +406,12 @@ async function sendMessage() {
     messages: history,
     systemPrompt: getSystemPrompt(),
     healthContext: buildHealthContext(),
+    memoryEnabled: memoryEnabled.value,
+    isFirst,
+    onTitle: (title) => {
+      // AI 生成的标题覆盖前端截断的临时标题
+      if (title) updateCurrentConv({ title })
+    },
     onChunk: (content) => {
       botMsg.text += content
       scrollToBottom()
@@ -395,9 +421,13 @@ async function sendMessage() {
     onDone: () => {
       botMsg.streaming = false
       loading.value = false
+      // 兜底：AI 没返回标题时，用首条消息截前 20 字
+      if (isFirst && !currentConv.value?.title) {
+        updateCurrentConv({ title: text.length > 20 ? text.slice(0, 20) + '...' : text })
+      }
       updateCurrentConv({ messages: [...messages.value] })
       speak(botMsg.text)
-      setTimeout(loadMemory, 2000)
+      setTimeout(loadMemory, 1500)
     },
     onError: (e) => {
       botMsg.text = `抱歉，出了点问题：${e.message}`
@@ -416,13 +446,29 @@ function scrollToBottom() {
 
 async function loadMemory() {
   try {
-    const res = await axios.get('/api/memory', { params: { user_id: userId.value } })
-    memories.value = res.data.memories || []
-  } catch (e) {}
+    const res = await fetchMemories(userId.value)
+    memories.value = res.memories
+    memoryCloud.value = res.cloud
+    memoryTip.value = res.tip || ''
+  } catch (e) {
+    memoryCloud.value = false
+    memoryTip.value = '记忆服务暂不可用'
+  }
 }
 async function clearMemory() {
-  try { await axios.delete('/api/memory', { params: { user_id: userId.value, index: -1 } }); memories.value = []; message.success('记忆已清空') }
+  try { await deleteMemory(userId.value, -1); memories.value = []; message.success('记忆已清空') }
   catch (e) { message.error('操作失败') }
+}
+async function removeMemory(index) {
+  try {
+    const res = await deleteMemory(userId.value, index)
+    memories.value = res.memories || memories.value.filter((_, i) => i !== index)
+    message.success('已删除这条记忆')
+  } catch (e) { message.error('操作失败') }
+}
+function onMemoryToggle(val) {
+  setStore('chat_memory_enabled', val)
+  message.success(val ? '已开启：AI 会记住你告诉它的重要信息' : '已关闭：AI 不再记录新记忆')
 }
 
 onMounted(() => {
