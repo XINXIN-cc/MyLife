@@ -1,62 +1,62 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 relative" :style="{ background: 'var(--lw-bg)' }">
-    <BubbleBackground />
-    <n-card class="w-full max-w-md shadow-lg relative z-10" :bordered="false">
-      <div class="text-center mb-8">
-        <div
-          class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4"
-          :style="{ background: 'var(--lw-primary)' }"
-        >
-          生
-        </div>
-        <h1 class="text-2xl font-semibold mb-1" :style="{ color: 'var(--lw-text)' }">创建账号</h1>
-        <p class="text-sm" :style="{ color: 'var(--lw-text-secondary)' }">注册后系统将自动分配你的专属 ID</p>
+  <!-- 复刻旧版毛玻璃注册页：双色光晕背景 + 装饰球 + 通透卡片 + 🌙品牌头 + Tab切换 -->
+  <div class="lw-auth">
+    <div class="auth-decor auth-decor-one"></div>
+    <div class="auth-decor auth-decor-two"></div>
+
+    <div class="auth-shell">
+      <div class="auth-brand">
+        <span class="auth-logo">🌙</span>
+        <small>MY LITTLE WORKBENCH</small>
+        <h1>创建账号</h1>
+        <p>注册后系统将自动分配你的专属 ID</p>
       </div>
 
-      <n-form ref="formRef" :model="form" :rules="rules" size="large">
-        <!-- 手机号 -->
+      <div class="auth-tabs">
+        <button @click="$router.push('/login')">登录</button>
+        <button class="active">注册</button>
+      </div>
+
+      <n-form ref="formRef" :model="form" :rules="rules" size="large" class="auth-form">
         <n-form-item label="手机号" path="phone">
           <n-input v-model:value="form.phone" placeholder="请输入手机号" clearable maxlength="11" @input="filterPhone">
             <template #prefix><n-icon><PhonePortraitOutline /></n-icon></template>
           </n-input>
-          <div class="text-xs mt-1" :style="{ color: 'var(--lw-text-secondary)' }">用于登录，请输入 11 位手机号</div>
+          <div class="auth-tip">用于登录，请输入 11 位手机号</div>
         </n-form-item>
 
-        <!-- 昵称 -->
         <n-form-item label="昵称" path="nickname">
           <n-input v-model:value="form.nickname" placeholder="你希望被怎么称呼" clearable>
             <template #prefix><n-icon><HappyOutline /></n-icon></template>
           </n-input>
-          <div class="text-xs mt-1" :style="{ color: 'var(--lw-text-secondary)' }">展示在工作台的名字，可随时修改（选填）</div>
+          <div class="auth-tip">展示在工作台的名字，可随时修改（选填）</div>
         </n-form-item>
 
-        <!-- 密码 -->
         <n-form-item label="密码" path="password">
           <n-input v-model:value="form.password" type="password" show-password-on="click" placeholder="设置登录密码">
             <template #prefix><n-icon><LockClosedOutline /></n-icon></template>
           </n-input>
-          <div class="text-xs mt-1" :style="{ color: 'var(--lw-text-secondary)' }">6-16 位，需同时包含字母和数字</div>
+          <div class="auth-tip">6-16 位，需同时包含字母和数字</div>
         </n-form-item>
 
-        <!-- 确认密码 -->
         <n-form-item label="确认密码" path="confirmPassword">
           <n-input v-model:value="form.confirmPassword" type="password" show-password-on="click" placeholder="再次输入密码" @keyup.enter="handleRegister">
             <template #prefix><n-icon><CheckmarkCircleOutline /></n-icon></template>
           </n-input>
         </n-form-item>
 
-        <n-button type="primary" block size="large" class="!mt-2" @click="handleRegister" :loading="loading">
+        <n-button type="primary" block size="large" class="auth-submit-btn !mt-2" @click="handleRegister" :loading="loading">
           注册
         </n-button>
       </n-form>
 
-      <div class="text-center mt-5 text-sm" :style="{ color: 'var(--lw-text-secondary)' }">
-        已有账号？
-        <n-button text type="primary" @click="$router.push('/login')">去登录</n-button>
+      <div class="auth-foot">
+        <p class="auth-status">账号数据将独立保存在你的设备</p>
+        <p class="auth-legal">继续使用即表示你同意 用户条款 和 隐私说明</p>
       </div>
-    </n-card>
+    </div>
 
-    <!-- 注册成功弹窗：显示分配的专属 ID -->
+    <!-- 注册成功弹窗：显示分配的专属 ID（功能原样保留） -->
     <n-modal v-model:show="showAccount" preset="card" title="注册成功" style="width: 400px" :mask-closable="false">
       <div class="text-center py-4">
         <div class="w-16 h-16 mx-auto mb-3 rounded-2xl flex items-center justify-center" :style="{ background: 'color-mix(in srgb, var(--lw-primary) 12%, transparent)' }">
@@ -170,3 +170,131 @@ function goLogin() {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+/* ===== 复刻旧版：双色光晕背景 + 装饰球 + 毛玻璃卡片 ===== */
+.lw-auth {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: max(28px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--lw-primary-soft, #9cc0e2) 28%, transparent), transparent 27%),
+    radial-gradient(circle at 86% 86%, color-mix(in srgb, var(--lw-primary, #4a6b8f) 25%, transparent), transparent 30%),
+    linear-gradient(155deg, color-mix(in srgb, var(--lw-bg, #f5f7fa) 92%, #fff), color-mix(in srgb, var(--lw-primary-soft, #9cc0e2) 12%, #fff));
+}
+.auth-decor {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0.42;
+  pointer-events: none;
+}
+.auth-decor-one {
+  width: 170px; height: 170px;
+  left: -60px; bottom: 8%;
+  background: var(--lw-primary-soft, #9cc0e2);
+}
+.auth-decor-two {
+  width: 120px; height: 120px;
+  right: -35px; top: 8%;
+  background: var(--lw-primary, #4a6b8f);
+}
+.auth-shell {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 94vw);
+  padding: clamp(24px, 5vw, 38px);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 25px 70px rgba(65, 72, 68, 0.13);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+body[data-theme='midnight'] .auth-shell {
+  background: rgba(28, 34, 48, 0.78);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.auth-brand { text-align: center; }
+.auth-logo {
+  width: 62px; height: 62px;
+  margin: auto;
+  border-radius: 21px;
+  display: grid; place-items: center;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--lw-card, #fff) 88%, #fff), var(--lw-card, #fff));
+  box-shadow: 0 10px 28px rgba(70, 80, 74, 0.1);
+  font-size: 29px;
+}
+.auth-brand small {
+  display: block;
+  margin-top: 16px;
+  color: var(--lw-primary, #4a6b8f);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+}
+.auth-brand h1 {
+  margin: 8px 0 5px;
+  color: var(--lw-text, #414a45);
+  font-size: 25px;
+  font-weight: 600;
+}
+.auth-brand p {
+  margin: 0;
+  color: var(--lw-text-secondary, #929a95);
+  font-size: 11px;
+}
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 22px 0 16px;
+  padding: 4px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--lw-primary-soft, #9cc0e2) 26%, var(--lw-card, #fff));
+}
+.auth-tabs button {
+  border: 0;
+  border-radius: 12px;
+  padding: 9px;
+  background: transparent;
+  color: var(--lw-text-secondary, #89918c);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.auth-tabs button.active {
+  background: var(--lw-card, #fff);
+  color: var(--lw-primary, #4a6b8f);
+  font-weight: 700;
+  box-shadow: 0 4px 13px rgba(65, 72, 68, 0.06);
+}
+.auth-form :deep(.n-form-item) { margin-bottom: 14px; }
+.auth-form :deep(.n-form-item-label__text) { color: var(--lw-text-secondary, #767f79); font-size: 11px; }
+.auth-form :deep(.n-input) { --n-border-radius: 13px !important; }
+.auth-tip {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--lw-text-tertiary, #a0a7b0);
+}
+.auth-submit-btn {
+  border-radius: 14px !important;
+  padding: 12px !important;
+  box-shadow: 0 9px 23px color-mix(in srgb, var(--lw-primary, #4a6b8f) 26%, transparent) !important;
+  letter-spacing: 1px;
+}
+.auth-foot { margin-top: 18px; text-align: center; }
+.auth-status {
+  margin: 0 0 6px;
+  color: var(--lw-text-tertiary, #a0a7b0);
+  font-size: 10px;
+}
+.auth-legal {
+  margin: 0;
+  color: var(--lw-text-tertiary, #a0a7b0);
+  font-size: 9px;
+}
+</style>
