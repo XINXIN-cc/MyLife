@@ -9,6 +9,7 @@ export async function onRequestGet(context) {
     ai: !!env.DEEPSEEK_API_KEY,
     memory: memoryEnabled(env),
     treehole: memoryEnabled(env),
+    sync: memoryEnabled(env),
     platform: 'cloudflare',
   })
 }

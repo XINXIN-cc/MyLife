@@ -1,4 +1,5 @@
 // 本地数据存储工具 - 按用户的 8 位账号 ID 隔离数据
+import { schedulePush } from './cloudSync'
 
 function getNamespace() {
   const user = localStorage.getItem('lw_current_user')
@@ -26,11 +27,13 @@ export function getStore(key, defaultValue = []) {
 export function setStore(key, value) {
   const ns = getNamespace()
   localStorage.setItem(`${ns}_${key}`, JSON.stringify(value))
+  schedulePush()
 }
 
 export function removeStore(key) {
   const ns = getNamespace()
   localStorage.removeItem(`${ns}_${key}`)
+  schedulePush()
 }
 
 // 生成唯一 ID

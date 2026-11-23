@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getDefaultEnabledModules } from '@/config/modules'
+import { schedulePush, rememberPhone, pullCloud } from '@/utils/cloudSync'
 
 export const useUserStore = defineStore('user', () => {
   // ===== 状态 =====
@@ -80,6 +81,7 @@ export const useUserStore = defineStore('user', () => {
       pet: { type: 'cat', name: '咪咪', enabled: false },
     }
     localStorage.setItem('lw_users', JSON.stringify(users))
+    rememberPhone(phone)
     return { success: true, account }
   }
 
@@ -105,6 +107,15 @@ export const useUserStore = defineStore('user', () => {
       pet: u.pet || { type: 'cat', name: '咪咪', enabled: false },
     }
     localStorage.setItem('lw_current_user', JSON.stringify(user.value))
+    rememberPhone(phone)
+    // 登录后异步拉取云端数据（不阻塞登录流程）
+    pullCloud().then((res) => {
+      if (res?.ok && res?.hasData) {
+        // 云端数据已写入 localStorage，重新载入到内存
+        const saved = localStorage.getItem('lw_current_user')
+        if (saved) { try { user.value = JSON.parse(saved) } catch (e) {} }
+      }
+    })
     return { success: true }
   }
 
@@ -127,6 +138,7 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].enabledModules = enabledModules
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    schedulePush()
   }
 
   // 更新启用的功能模块
@@ -139,6 +151,7 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].enabledModules = modules
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    schedulePush()
   }
 
   // 更新昵称
@@ -151,6 +164,7 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].nickname = nickname
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    schedulePush()
   }
 
   // 更新头像
@@ -163,6 +177,7 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].avatar = avatar
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    schedulePush()
   }
 
   // 更新 AI 名字
@@ -175,6 +190,7 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].aiName = aiName
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    schedulePush()
   }
 
   // 更新手机号
@@ -191,6 +207,8 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].phone = phone
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    rememberPhone(phone)
+    schedulePush()
     return { success: true }
   }
 
@@ -204,6 +222,8 @@ export const useUserStore = defineStore('user', () => {
       users[user.value.account].pet = user.value.pet
       localStorage.setItem('lw_users', JSON.stringify(users))
     }
+    rememberPhone(user.value.phone)
+    schedulePush()
   }
 
   return {
