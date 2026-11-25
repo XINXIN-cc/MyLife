@@ -6,6 +6,7 @@ import { getStore, setStore } from './storage'
 const PHONE_KEY = 'lw_sync_phone'
 const SYNC_TIME_KEY = 'lw_sync_time'
 const PULLING_FLAG = 'lw_sync_pulling'
+const PROFILE_MTIME_KEY = 'lw_profile_mtime' // 本地资料最后修改时间：用于和云端比对，谁新谁生效
 
 let pushTimer = null
 let lastPushHash = ''
@@ -38,6 +39,7 @@ function collectData() {
     store,
     theme: localStorage.getItem('lw_theme') || '',
     visits: safeParse(localStorage.getItem('lw_page_visits')),
+    profileMtime: Number(localStorage.getItem(PROFILE_MTIME_KEY) || 0),
   }
 }
 
@@ -56,9 +58,16 @@ function applyData(data) {
   localStorage.setItem(PULLING_FLAG, '1')
   try {
     if (data.profile && typeof data.profile === 'object') {
-      // 保留本机账号，只同步资料字段（头像/昵称/兴趣/宠物等）
-      const merged = { ...(user || {}), ...data.profile, account: account || data.profile.account }
+      // 谁的资料更晚修改，谁生效——避免云端旧资料把本地刚改的覆盖回去
+      const localMtime = Number(localStorage.getItem(PROFILE_MTIME_KEY) || 0)
+      const cloudMtime = Number(data.profileMtime || 0)
+      // 本地有修改记录且不比云端旧 → 保留本地资料；否则用云端补齐
+      const keepLocal = localMtime > 0 && localMtime >= cloudMtime
+      const merged = keepLocal
+        ? { ...(data.profile || {}), ...(user || {}), account: account || data.profile.account }
+        : { ...(user || {}), ...data.profile, account: account || data.profile.account }
       localStorage.setItem('lw_current_user', JSON.stringify(merged))
+      if (!keepLocal && cloudMtime > 0) localStorage.setItem(PROFILE_MTIME_KEY, String(cloudMtime))
     }
     if (data.store && typeof data.store === 'object') {
       for (const [k, v] of Object.entries(data.store)) {
@@ -75,7 +84,9 @@ function applyData(data) {
 
 // 上传整份数据（防抖）
 export function schedulePush() {
-  if (isPulling()) return
+  if (isPulling()) return // 拉取触发的写入不记时间，避免把云端回灌误当成本地改动
+  // 本地资料发生改动，立即记录时间（哪怕还没上传，刷新时也能保住新值）
+  localStorage.setItem(PROFILE_MTIME_KEY, String(Date.now()))
   const phone = currentPhone()
   if (!phone) return
   clearTimeout(pushTimer)
